@@ -53,18 +53,13 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func loadGeofences() {
-        // Get the path to the locations.json file in the submodule
-        let fileManager = FileManager.default
-        let currentPath = fileManager.currentDirectoryPath
-        let locationsPath = (currentPath as NSString).appendingPathComponent("locations/Locations.json")
-        
-        guard fileManager.fileExists(atPath: locationsPath) else {
-            print("Could not find Locations.json in submodule")
+        guard let url = Bundle.main.url(forResource: "Locations", withExtension: "json") else {
+            print("Could not find Locations.json in app bundle")
             return
         }
         
         do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: locationsPath))
+            let data = try Data(contentsOf: url)
             let locationData = try JSONDecoder().decode(LocationData.self, from: data)
             
             // Remove existing geofences
