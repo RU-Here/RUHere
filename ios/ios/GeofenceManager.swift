@@ -52,6 +52,39 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestAlwaysAuthorization()
     }
     
+    func loadGeofences() {
+        // Get the path to the locations.json file in the submodule
+        let fileManager = FileManager.default
+        let currentPath = fileManager.currentDirectoryPath
+        let locationsPath = (currentPath as NSString).appendingPathComponent("locations/Locations.json")
+        
+        guard fileManager.fileExists(atPath: locationsPath) else {
+            print("Could not find Locations.json in submodule")
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: locationsPath))
+            let locationData = try JSONDecoder().decode(LocationData.self, from: data)
+            
+            // Remove existing geofences
+            for region in monitoredRegions {
+                locationManager.stopMonitoring(for: region)
+            }
+            monitoredRegions.removeAll()
+            
+            // Add new geofences
+            for location in locationData.locations {
+                addGeofence(latitude: location.latitude,
+                           longitude: location.longitude,
+                           radius: location.radius,
+                           identifier: location.name)
+            }
+        } catch {
+            print("Error loading geofences: \(error.localizedDescription)")
+        }
+    }
+    
     func addGeofence(latitude: Double, longitude: Double, radius: Double, identifier: String) {
         let region = CLCircularRegion(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
                                     radius: radius,
@@ -82,6 +115,10 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
         print("Location authorization status changed to: \(manager.authorizationStatus.rawValue)")
+        
+        if manager.authorizationStatus == .authorizedAlways {
+            loadGeofences()
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {

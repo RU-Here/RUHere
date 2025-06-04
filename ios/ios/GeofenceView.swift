@@ -3,10 +3,6 @@ import CoreLocation
 
 struct GeofenceView: View {
     @StateObject private var geofenceManager = GeofenceManager()
-    @State private var latitude: String = ""
-    @State private var longitude: String = ""
-    @State private var radius: String = "100"
-    @State private var identifier: String = ""
     
     var body: some View {
         NavigationView {
@@ -17,36 +13,7 @@ struct GeofenceView: View {
                     }
                     .padding()
                 } else if geofenceManager.authorizationStatus == .authorizedAlways {
-                    Form {
-                        Section(header: Text("Add New Geofence")) {
-                            TextField("Latitude", text: $latitude)
-                                .keyboardType(.decimalPad)
-                            TextField("Longitude", text: $longitude)
-                                .keyboardType(.decimalPad)
-                            TextField("Radius (meters)", text: $radius)
-                                .keyboardType(.decimalPad)
-                            TextField("Identifier", text: $identifier)
-                            
-                            Button("Add Geofence") {
-                                if let lat = Double(latitude),
-                                   let lon = Double(longitude),
-                                   let rad = Double(radius) {
-                                    geofenceManager.addGeofence(
-                                        latitude: lat,
-                                        longitude: lon,
-                                        radius: rad,
-                                        identifier: identifier
-                                    )
-                                    // Clear fields
-                                    latitude = ""
-                                    longitude = ""
-                                    radius = "100"
-                                    identifier = ""
-                                }
-                            }
-                            .disabled(latitude.isEmpty || longitude.isEmpty || radius.isEmpty || identifier.isEmpty)
-                        }
-                        
+                    List {
                         Section(header: Text("Monitored Regions")) {
                             ForEach(geofenceManager.monitoredRegions, id: \.identifier) { region in
                                 VStack(alignment: .leading) {
@@ -56,13 +23,6 @@ struct GeofenceView: View {
                                         .font(.subheadline)
                                     Text("Radius: \(Int(region.radius))m")
                                         .font(.subheadline)
-                                }
-                                .swipeActions {
-                                    Button(role: .destructive) {
-                                        geofenceManager.removeGeofence(identifier: region.identifier)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
                                 }
                             }
                         }

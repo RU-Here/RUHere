@@ -1,0 +1,3 @@
+[submodule "locations"]
+	path = locations
+	url = https://github.com/RU-Here/RUHereLocations.git
