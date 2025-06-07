@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		48EA25402DF3EF2B002E5BE7 /* Locations.json in Resources */ = {isa = PBXBuildFile; fileRef = 48EA253F2DF3EF2B002E5BE7 /* Locations.json */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		48596D4D2DF09B8F00B5B3C9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		48596D3C2DF09B8C00B5B3C9 /* ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		48596D4C2DF09B8F00B5B3C9 /* iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		48596D562DF09B8F00B5B3C9 /* iosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		48EA253F2DF3EF2B002E5BE7 /* Locations.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = Locations.json; path = locations/Locations.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +93,7 @@
 		48596D332DF09B8C00B5B3C9 = {
 			isa = PBXGroup;
 			children = (
+				48EA253F2DF3EF2B002E5BE7 /* Locations.json */,
 				48596D3E2DF09B8C00B5B3C9 /* ios */,
 				48596D4F2DF09B8F00B5B3C9 /* iosTests */,
 				48596D592DF09B8F00B5B3C9 /* iosUITests */,
@@ -225,6 +231,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				48EA25402DF3EF2B002E5BE7 /* Locations.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
