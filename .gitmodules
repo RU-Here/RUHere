@@ -1,3 +1,6 @@
 [submodule "ios/locations"]
 	path = ios/locations
 	url = https://github.com/RU-Here/RUHereLocations.git
+[submodule "geofencing-api/locations"]
+	path = geofencing-api/locations
+	url = https://github.com/RU-Here/RUHereLocations.git
