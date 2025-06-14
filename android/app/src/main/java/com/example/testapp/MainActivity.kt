@@ -1,0 +1,229 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
+package com.example.testapp
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.testapp.ui.theme.TestAppTheme
+import kotlin.random.Random
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        var item1 = ToDoItem("drink chai", false)
+        var item2 = ToDoItem("clean room", false)
+        var itemsArray = arrayOf(item1, item2)
+        var groupchats = listOf<GroupChat>(
+                    GroupChat("Honorary Girls"),
+                    GroupChat("Gym Bros"),
+                    GroupChat("Little Cousins"),
+                    GroupChat("Cricket"),
+                    GroupChat("Druskin")
+                )
+        setContent {
+            TestAppTheme {
+                    LazyColumn (
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
+                        items(itemsArray) {
+                            DisplayItem(it)
+                        }
+                    }
+                    DisplayGroupChats(groupchats);
+                }
+            }
+        }
+    }
+
+
+class ToDoItem(val description: String, val checked: Boolean)
+
+class GroupChat(val name: String)
+{
+    val colors = arrayOf(Color.LightGray, Color.Cyan, Color.Green, Color.Magenta);
+    val color = colors[Random.nextInt(colors.size)]
+}
+
+@Composable
+fun ListItems(name: String) {
+    Text(text = name)
+}
+
+
+@Composable
+fun DisplayItem(item: ToDoItem)
+{
+    OutlinedButton(onClick = {}){
+
+    }
+    Text(
+        text = item.description,
+        textAlign = TextAlign.Center,
+        color = Color.Red,
+    )
+}
+
+
+@Composable
+fun DisplayGroupChats(gcs : List<GroupChat>)
+{
+    var groupchats by remember {
+        mutableStateOf(
+            gcs
+        )
+    }
+
+    var isPressedAddGroupChat by remember { mutableStateOf(false)}
+
+    if (isPressedAddGroupChat) {AddGroupChat()}
+
+    Row (
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.End,
+        modifier = Modifier
+            .fillMaxHeight()
+            .padding(vertical = 30.dp)
+    ) {
+        LazyRow (
+            modifier = Modifier
+                .width(310.dp)
+        ){
+            items(groupchats){
+                Spacer(Modifier.width(20.dp))
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .background(
+                            shape = CircleShape,
+                            color = it.color
+                        )
+                        //.aspectRatio(1f)
+                        //.fillMaxHeight()
+                        .size(100.dp)
+
+                ){
+                    Text(
+                        text = it.name,
+                        textAlign = TextAlign.Center,
+                        fontSize = 25.sp,
+                        color = Color.White,
+                        modifier = Modifier
+                            .padding(5.dp)
+                    )
+                }
+            }
+        }
+        Box(
+            contentAlignment = Alignment.CenterEnd,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        ){
+            IconButton(
+                onClick = {isPressedAddGroupChat = true},
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(
+                        color = Color.LightGray,
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    tint = Color.White,
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AddGroupChat() {
+    var field by remember { mutableStateOf("") }
+    var isPressedAdd by remember { mutableStateOf(false) }
+    var isPressedBack by remember{ mutableStateOf(false) }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()
+    ){
+        TextField(
+            value = field,
+            onValueChange = {newText -> field = newText},
+            label = {
+                Text(
+                    text = "Groupchat Name",
+                    color = Color.White
+                )
+            }
+        )
+        Row(){
+            Button(
+                onClick = {isPressedBack = true}
+            ){
+                Text(text = "Add Groupchat")
+            }
+            Button(
+                onClick = {isPressedBack = true}
+            ){
+                Text(text = "Back")
+            }
+
+        }
+    }
+}
