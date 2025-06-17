@@ -2,6 +2,10 @@
 
 package com.example.testapp
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -52,12 +56,12 @@ import com.example.testapp.ui.theme.TestAppTheme
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
+
+    var groupchats = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        var item1 = ToDoItem("drink chai", false)
-        var item2 = ToDoItem("clean room", false)
-        var itemsArray = arrayOf(item1, item2)
         var groupchats = listOf<GroupChat>(
                     GroupChat("Honorary Girls"),
                     GroupChat("Gym Bros"),
@@ -67,49 +71,14 @@ class MainActivity : ComponentActivity() {
                 )
         setContent {
             TestAppTheme {
-                    LazyColumn (
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        items(itemsArray) {
-                            DisplayItem(it)
-                        }
-                    }
-                    DisplayGroupChats(groupchats);
-                }
+                DisplayGroupChats(groupchats)
             }
         }
     }
 
-
-class ToDoItem(val description: String, val checked: Boolean)
-
-class GroupChat(val name: String)
-{
-    val colors = arrayOf(Color.LightGray, Color.Cyan, Color.Green, Color.Magenta);
-    val color = colors[Random.nextInt(colors.size)]
-}
-
-@Composable
-fun ListItems(name: String) {
-    Text(text = name)
-}
-
-
-@Composable
-fun DisplayItem(item: ToDoItem)
-{
-    OutlinedButton(onClick = {}){
-
+    fun setGroupChatsList(newGCS: Int){
+        groupchats = newGCS
     }
-    Text(
-        text = item.description,
-        textAlign = TextAlign.Center,
-        color = Color.Red,
-    )
 }
 
 
@@ -132,7 +101,7 @@ fun DisplayGroupChats(gcs : List<GroupChat>)
         modifier = Modifier
             .fillMaxHeight()
             .padding(vertical = 30.dp)
-    ) {
+    ){
         LazyRow (
             modifier = Modifier
                 .width(310.dp)
