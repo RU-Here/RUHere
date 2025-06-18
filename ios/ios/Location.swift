@@ -5,6 +5,7 @@ struct Location: Codable {
     let latitude: Double
     let longitude: Double
     let radius: Double
+    let areaCode: String
 }
 
 struct LocationData: Codable {

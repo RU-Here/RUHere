@@ -73,7 +73,7 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 addGeofence(latitude: location.latitude,
                            longitude: location.longitude,
                            radius: location.radius,
-                           identifier: location.name)
+                           identifier: location.areaCode)
             }
         } catch {
             print("Error loading geofences: \(error.localizedDescription)")
