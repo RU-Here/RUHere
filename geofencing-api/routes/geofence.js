@@ -71,6 +71,18 @@ router.post('/deleteUser/:name', async (req, res) => {
 
 });
 
+// Endpoint: Updating a User's name field
+router.post('/changeName', async (req, res) => {
+  const { userId, newName } = req.body;
+  try {
+    const update = await db.collection('Users').doc(userId).update({name: newName});
+
+    res.status(200).send({ message: 'Name changed.' });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 // Endpoint: User enters a geofence
 router.post('/enter', async (req, res) => {
   const { userId, locationId, coordinates } = req.body;
@@ -81,6 +93,9 @@ router.post('/enter', async (req, res) => {
       coordinates,
       timestamp: Date.now()
     });
+
+    // If there are other users in the area, send notification to user of those people
+    // Send notification to people already in the area of the new person
 
     res.status(200).send({ message: 'Entered geofence logged.' });
   } catch (error) {
@@ -105,8 +120,8 @@ router.get('/nearby/:locationId', async (req, res) => {
   const locationId = req.params.locationId;
 
   try {
-    const snapshot = await db.collection('user_locations')
-      .where('locationId', '==', locationId)
+    const snapshot = await db.collection('Users')
+      .where('areacode', '==', locationId)
       .get();
 
     const users = [];
@@ -118,6 +133,11 @@ router.get('/nearby/:locationId', async (req, res) => {
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
+});
+
+// Endpoint: Get all users in a group
+router.get('/allUsersInGroup', async (req, res) => {
+
 });
 
 module.exports = router;
