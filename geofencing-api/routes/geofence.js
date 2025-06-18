@@ -2,6 +2,75 @@ const express = require('express');
 const router = express.Router();
 const db = require('../firebase/admin');
 
+// Endpoint: Create group
+router.post('/addGroup', async (req, res) => {
+  const { groupId, name, people } = req.body;
+
+  try {
+    await db.collection('Groups').doc(groupId).set({
+      name,
+      people
+    });
+
+    res.status(200).send({ message: 'Group created.'});
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+
+});
+
+// Endpoint: Group deleted
+router.post('/deleteGroup', async (req, res) => {
+  const { groupId } = req.body;
+
+  try {
+    await db.collection('Groups').doc(groupId).delete();
+    res.status(200).send({ message: 'Group deleted.' });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// Endpoint: User created
+router.post('/addUser', async (req, res) => {
+  const { areacode, name } = req.body;
+
+  try {
+    await db.collection('Users').add({
+      areacode: areacode,
+      name: name
+    });
+
+    res.status(200).send({ message: 'User created.'});
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+
+});
+
+// Endpoint: User deleted
+router.post('/deleteUser/:name', async (req, res) => {
+  const name = req.params.name;
+
+  try {
+    const snapshot = await db.collection('Users')
+      .where('name', '==', name)
+      .get();
+
+    const users = [];
+    snapshot.forEach(doc => {
+      users.push({ userId: doc.id, ...doc.data() });
+      db.collection('Users').doc(doc.id).delete();
+    });
+
+
+    res.status(200).send({message: 'User deleted'});
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+
+});
+
 // Endpoint: User enters a geofence
 router.post('/enter', async (req, res) => {
   const { userId, locationId, coordinates } = req.body;
