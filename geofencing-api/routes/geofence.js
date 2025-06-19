@@ -135,9 +135,32 @@ router.get('/nearby/:locationId', async (req, res) => {
   }
 });
 
-// Endpoint: Get all users in a group
-router.get('/allUsersInGroup', async (req, res) => {
+// Endpoint: Get all groups
+router.get('/allGroups', async (req, res) => {
+  const groups = await db.collection('Groups').get();
 
+  try {
+    const groupData = [];
+    for (const doc of groups.docs) {
+      const groupObjects = doc.data();
+      const personRefs = groupObjects.people || [];
+
+      const peopleData = await Promise.all(
+        personRefs.map(async (ref) => {
+          const personObject = await ref.get();
+            return { personId: personObject.id, ...personObject.data() }
+        })
+      )
+      groupData.push({ groupId: doc.id, ...doc.data(), people: peopleData });
+
+    }
+    console.log(groupData);
+    console.log(groupData[0].people[0]);
+    
+    res.status(200).send(groupData)
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
 });
 
 module.exports = router;
