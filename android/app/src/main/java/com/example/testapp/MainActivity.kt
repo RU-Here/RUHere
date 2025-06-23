@@ -3,6 +3,7 @@
 package com.example.testapp
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import com.example.testapp.ui.theme.TestAppTheme
 import kotlin.random.Random
 
@@ -62,6 +65,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ),
+            0
+        )
         var groupchats = listOf<GroupChat>(
                     GroupChat("Honorary Girls"),
                     GroupChat("Gym Bros"),
@@ -71,7 +82,32 @@ class MainActivity : ComponentActivity() {
                 )
         setContent {
             TestAppTheme {
-                DisplayGroupChats(groupchats)
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Button(
+                        onClick = {
+                            Intent(applicationContext, LocationService::class.java).apply{
+                                action = LocationService.ACTION_START
+                                startService(this)
+                            }
+                        }){
+                        Text(text = "Start")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            Intent(applicationContext, LocationService::class.java).apply{
+                                action = LocationService.ACTION_STOP
+                                startService(this)
+                            }
+                        }){
+                        Text(text = "Stop")
+                    }
+                }
+                //DisplayGroupChats(groupchats)
             }
         }
     }
