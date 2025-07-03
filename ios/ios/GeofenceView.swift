@@ -12,6 +12,7 @@ struct Group: Identifiable {
     let id: String
     let name: String
     let people: [Person]
+    let emoji: String // use image later
 }
 
 struct GeofenceAnnotation: Identifiable {
@@ -28,38 +29,92 @@ struct PersonAnnotation: Identifiable {
     let allPeople: [Person]
 }
 
+extension Color {
+    static let accent = Color(red: 1.0, green: 0.25, blue: 0.25) // #FF4040
+    static let accentLight = Color(red: 1.0, green: 0.4, blue: 0.4)
+    static let background = Color(red: 0.98, green: 0.98, blue: 1.0)
+    static let cardBackground = Color.white
+}
+
+struct ModernCardView<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.cardBackground)
+                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+            )
+    }
+}
+
 struct RegionDetailView: View {
     let region: CLCircularRegion
     
     var body: some View {
         NavigationView {
-            List {
-                Section(header: Text("Region Details")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Identifier")
-                            .font(.headline)
-                        Text(region.identifier)
-                            .font(.subheadline)
-                        
-                        Text("Center")
-                            .font(.headline)
-                            .padding(.top, 4)
-                        Text("Latitude: \(region.center.latitude)")
-                            .font(.subheadline)
-                        Text("Longitude: \(region.center.longitude)")
-                            .font(.subheadline)
-                        
-                        Text("Radius")
-                            .font(.headline)
-                            .padding(.top, 4)
-                        Text("\(Int(region.radius)) meters")
-                            .font(.subheadline)
-                    }
-                    .padding(.vertical, 8)
+            VStack(spacing: 24) {
+                // Header with gradient
+                VStack(spacing: 16) {
+                    Image(systemName: "location.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.accent)
+                    
+                    Text(region.identifier)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
                 }
+                .padding(.top, 20)
+                
+                ModernCardView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundColor(.accent)
+                            Text("Location Details")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            DetailRow(title: "Latitude", value: String(format: "%.6f", region.center.latitude))
+                            DetailRow(title: "Longitude", value: String(format: "%.6f", region.center.longitude))
+                            DetailRow(title: "Radius", value: "\(Int(region.radius)) meters")
+                        }
+                    }
+                    .padding(20)
+                }
+                .padding(.horizontal)
+                
+                Spacer()
             }
+            .background(Color.background.ignoresSafeArea())
             .navigationTitle("Region Details")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+struct DetailRow: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
         }
     }
 }
@@ -78,17 +133,17 @@ struct GeofenceView: View {
             Person(id: "4", name: "Dev", areaCode: "CASC"),
             Person(id: "5", name: "Joshua", areaCode: "LSC"),
             Person(id: "6", name: "Alan", areaCode: "BSC")
-        ]),
+        ], emoji: "🎢"),
         Group(id: "2", name: "Band", people: [
             Person(id: "4", name: "Ezra", areaCode: "CASC"),
             Person(id: "5", name: "Alicia", areaCode: "CASC"),
             Person(id: "6", name: "Hana", areaCode: "LSC")
-        ]),
+        ], emoji: "🎵"),
         Group(id: "3", name: "RuHere Dev", people: [
             Person(id: "7", name: "Jash", areaCode: "BSC"),
             Person(id: "8", name: "Matt", areaCode: "CASC"),
             Person(id: "9", name: "Adi", areaCode: "LSC")
-        ])
+        ], emoji: "💻")
     ]
     
     private var annotations: [GeofenceAnnotation] {
@@ -173,160 +228,379 @@ struct GeofenceView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
-                if geofenceManager.authorizationStatus == .notDetermined {
-                    Button("Request Location Permission") {
-                        geofenceManager.requestLocationPermission()
-                    }
-                    .padding()
-                } else if geofenceManager.authorizationStatus == .authorizedAlways {
-                    // Status bar showing current user location
-                    HStack {
-                        Image(systemName: "location.fill")
-                            .foregroundColor(.blue)
-                        if let currentGeofence = geofenceManager.currentUserGeofence {
-                            Text("You are in: \(currentGeofence)")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                        } else {
-                            Text("You are not in any tracked location")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .background(Color.gray.opacity(0.1))
-                    
-                    Map(position: $cameraPosition) {
-                        UserAnnotation()
-                        ForEach(annotations) { annotation in
-                            Annotation(annotation.identifier, coordinate: annotation.coordinate) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.blue.opacity(0.2))
-                                        .frame(width: CGFloat(annotation.radius * 2), height: CGFloat(annotation.radius * 2))
-                                    Circle()
-                                        .stroke(Color.blue, lineWidth: 2)
-                                        .frame(width: CGFloat(annotation.radius * 2), height: CGFloat(annotation.radius * 2))
+            ZStack {
+                Color.background.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    if geofenceManager.authorizationStatus == .notDetermined {
+                        VStack(spacing: 24) {
+                            Spacer()
+                            
+                            Image(systemName: "location.circle")
+                                .font(.system(size: 80))
+                                .foregroundColor(.accent)
+                            
+                            VStack(spacing: 12) {
+                                Text("Location Permission")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                
+                                Text("We need your location to show you friends nearby")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            
+                            Button(action: {
+                                geofenceManager.requestLocationPermission()
+                            }) {
+                                HStack {
+                                    Image(systemName: "location.fill")
+                                    Text("Enable Location")
                                 }
-                                .contentShape(Circle())
-                                .onTapGesture {
-                                    if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == annotation.identifier }) {
-                                        selectedRegion = region
-                                        showingRegionDetail = true
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 32)
+                                .padding(.vertical, 16)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.accent, .accentLight],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(25)
+                                .shadow(color: .accent.opacity(0.3), radius: 10, x: 0, y: 5)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding()
+                    } else if geofenceManager.authorizationStatus == .authorizedAlways {
+                        ModernStatusBar(currentGeofence: geofenceManager.currentUserGeofence)
+                        
+                        Map(position: $cameraPosition) {
+                            UserAnnotation()
+                            ForEach(annotations) { annotation in
+                                Annotation(annotation.identifier, coordinate: annotation.coordinate) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [.accent.opacity(0.2), .accentLight.opacity(0.1)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                            .frame(width: CGFloat(annotation.radius * 2), height: CGFloat(annotation.radius * 2))
+                                        Circle()
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [.accent, .accentLight],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 3
+                                            )
+                                            .frame(width: CGFloat(annotation.radius * 2), height: CGFloat(annotation.radius * 2))
+                                    }
+                                    .contentShape(Circle())
+                                    .onTapGesture {
+                                        if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == annotation.identifier }) {
+                                            selectedRegion = region
+                                            showingRegionDetail = true
+                                        }
                                     }
                                 }
                             }
+                            
+                            ForEach(personAnnotations) { annotation in
+                                Annotation(annotation.person.name, coordinate: annotation.coordinate) {
+                                    ModernPersonAnnotation(annotation: annotation)
+                                }
+                            }
+                        }
+                        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll, showsTraffic: false))
+                        .clipShape(RoundedRectangle(cornerRadius: 0))
+                        .onAppear {
+                            cameraPosition = .region(calculateMapRegion())
+                        }
+                        .onChange(of: geofenceManager.monitoredRegions) { oldValue, newValue in
+                            cameraPosition = .region(calculateMapRegion())
                         }
                         
-                        // Show person annotations when a group is selected
-                        ForEach(personAnnotations) { annotation in
-                            Annotation(annotation.person.name, coordinate: annotation.coordinate) {
-                                VStack(spacing: 4) {
-                                    ZStack {
-                                        Image(systemName: "person.circle.fill")
-                                            .font(.title)
-                                            .foregroundColor(.blue)
-                                        
-                                        if annotation.allPeople.count > 1 {
-                                            Text("\(annotation.allPeople.count)")
-                                                .font(.caption2)
-                                                .foregroundColor(.white)
-                                                .padding(4)
-                                                .background(Circle().fill(Color.blue))
-                                                .offset(x: 8, y: -8)
-                                        }
-                                    }
-                                    
-                                    VStack(spacing: 2) {
-                                        ForEach(annotation.allPeople) { person in
-                                            Text(person.name)
-                                                .font(.caption)
-                                                .padding(4)
-                                                .background(Color.white.opacity(0.9))
-                                                .cornerRadius(4)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll, showsTraffic: false))
-                    .frame(maxHeight: .infinity)
-                    .ignoresSafeArea(edges: .bottom)
-                    .onAppear {
-                        cameraPosition = .region(calculateMapRegion())
-                    }
-                    .onChange(of: geofenceManager.monitoredRegions) { oldValue, newValue in
-                        cameraPosition = .region(calculateMapRegion())
-                    }
-                    .overlay(
-                        VStack {
+                        ModernGroupsSection(
+                            groups: groups,
+                            selectedGroup: $selectedGroup,
+                            currentGeofence: geofenceManager.currentUserGeofence
+                        )
+                    } else {
+                        VStack(spacing: 24) {
                             Spacer()
-                            // Groups Section
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(groups) { group in
-                                        Button(action: {
-                                            selectedGroup = selectedGroup?.id == group.id ? nil : group
-                                        }) {
-                                            VStack {
-                                                Text(group.name)
-                                                    .font(.headline)
-                                                // Show count of people in current geofence instead of total
-                                                if let currentGeofence = geofenceManager.currentUserGeofence {
-                                                    let peopleInCurrentGeofence = group.people.filter { $0.areaCode == currentGeofence }.count
-                                                    Text("\(peopleInCurrentGeofence) here")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                } else {
-                                                    Text("Enter a location")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                }
-                                            }
-                                            .padding()
-                                            .background(selectedGroup?.id == group.id ? Color.blue.opacity(0.9) : Color.white.opacity(0.9))
-                                            .foregroundColor(selectedGroup?.id == group.id ? .white : .primary)
-                                            .cornerRadius(12)
-                                            .shadow(radius: 2)
-                                        }
-                                    }
-                                    
-                                    // Add New Group Button
-                                    Button(action: {
-                                        // TODO: Implement add new group functionality
-                                    }) {
-                                        VStack {
-                                            Image(systemName: "plus.circle.fill")
-                                                .font(.title)
-                                            Text("New Group")
-                                                .font(.caption)
-                                        }
-                                        .padding()
-                                        .background(Color.white.opacity(0.9))
-                                        .cornerRadius(12)
-                                        .shadow(radius: 2)
-                                    }
-                                }
-                                .padding(.horizontal)
+                            
+                            Image(systemName: "location.slash")
+                                .font(.system(size: 80))
+                                .foregroundColor(.secondary)
+                            
+                            VStack(spacing: 12) {
+                                Text("Location Access Denied")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                
+                                Text("Please enable location access in Settings to use this app")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
                             }
-                            .frame(height: 100)
-                            .padding(.bottom, 16)
+                            
+                            Spacer()
                         }
-                    )
-                } else {
-                    Text("Location permission denied. Please enable it in Settings.")
                         .padding()
+                    }
                 }
             }
             .navigationTitle("ru-here")
+            .navigationBarTitleDisplayMode(.automatic)
             .sheet(isPresented: $showingRegionDetail) {
                 if let region = selectedRegion {
                     RegionDetailView(region: region)
                 }
+            }
+        }
+    }
+}
+
+struct ModernStatusBar: View {
+    let currentGeofence: String?
+    
+    var body: some View {
+        ModernCardView {
+            HStack(spacing: 12) {
+                Image(systemName: "location.fill")
+                    .font(.title3)
+                    .foregroundColor(.accent)
+                    .frame(width: 24, height: 24)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    if let currentGeofence = currentGeofence {
+                        HStack {
+                            Text("You're at")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(currentGeofence)
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.accent)
+                        }
+                        
+                    } else {
+                        Text("Not in any tracked location")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        Text("Move to a public location to find friends 👯")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                if currentGeofence != nil {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 8, height: 8)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+}
+
+struct ModernPersonAnnotation: View {
+    let annotation: PersonAnnotation
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.accent, .accentLight],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 50, height: 50)
+                    .shadow(color: .accent.opacity(0.3), radius: 8, x: 0, y: 4)
+                
+                Image(systemName: "person.fill")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                
+                if annotation.allPeople.count > 1 {
+                    Text("\(annotation.allPeople.count)")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(6)
+                        .background(
+                            Circle()
+                                .fill(.red)
+                                .shadow(color: .red.opacity(0.3), radius: 4, x: 0, y: 2)
+                        )
+                        .offset(x: 18, y: -18)
+                }
+            }
+            
+            ModernCardView {
+                VStack(spacing: 4) {
+                    ForEach(annotation.allPeople) { person in
+                        Text(person.name)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+}
+
+struct ModernGroupsSection: View {
+    let groups: [Group]
+    @Binding var selectedGroup: Group?
+    let currentGeofence: String?
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Your Groups")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(groups) { group in
+                        ModernGroupCard(
+                            group: group,
+                            isSelected: selectedGroup?.id == group.id,
+                            currentGeofence: currentGeofence
+                        ) {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                selectedGroup = selectedGroup?.id == group.id ? nil : group
+                            }
+                        }
+                    }
+                    
+                    // Add New Group Button
+                    ModernAddGroupCard()
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .padding(.vertical, 20)
+        .background(Color.background)
+    }
+}
+
+struct ModernGroupCard: View {
+    let group: Group
+    let isSelected: Bool
+    let currentGeofence: String?
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            ModernCardView {
+                VStack(spacing: 12) {
+                    Text(group.emoji)
+                        .font(.system(size: 32))
+                    
+                    VStack(spacing: 4) {
+                        Text(group.name)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(isSelected ? .white : .primary)
+                            .multilineTextAlignment(.center)
+                        
+                        if let currentGeofence = currentGeofence {
+                            let peopleInCurrentGeofence = group.people.filter { $0.areaCode == currentGeofence }.count
+                            Text("\(peopleInCurrentGeofence) here")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(isSelected ? .white.opacity(0.8) : .accent)
+                        } else {
+                            Text("Enter a location")
+                                .font(.caption)
+                                .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                .frame(width: 140, height: 120)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            isSelected 
+                            ? LinearGradient(
+                                colors: [.accent, .accentLight],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [.cardBackground, .cardBackground],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(
+                            color: isSelected ? .accent.opacity(0.3) : .black.opacity(0.1),
+                            radius: isSelected ? 12 : 8,
+                            x: 0,
+                            y: isSelected ? 6 : 4
+                        )
+                )
+            }
+        }
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
+    }
+}
+
+struct ModernAddGroupCard: View {
+    var body: some View {
+        Button(action: {
+            // TODO: Implement add new group functionality
+        }) {
+            ModernCardView {
+                VStack(spacing: 12) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.accent)
+                    
+                    Text("New Group")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                .frame(width: 140, height: 120)
             }
         }
     }
