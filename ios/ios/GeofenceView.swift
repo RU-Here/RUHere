@@ -361,8 +361,8 @@ struct GeofenceView: View {
                     }
                 }
             }
-            .navigationTitle("ru-here")
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationTitle("RuHere")
+            .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showingRegionDetail) {
                 if let region = selectedRegion {
                     RegionDetailView(region: region)
@@ -524,7 +524,12 @@ struct ModernGroupCard: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
+            
+            action()
+        }) {
             ModernCardView {
                 VStack(spacing: 12) {
                     Text(group.emoji)
@@ -585,6 +590,9 @@ struct ModernGroupCard: View {
 struct ModernAddGroupCard: View {
     var body: some View {
         Button(action: {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            
             // TODO: Implement add new group functionality
         }) {
             ModernCardView {
