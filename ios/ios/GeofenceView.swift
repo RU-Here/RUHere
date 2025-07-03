@@ -74,7 +74,10 @@ struct GeofenceView: View {
         Group(id: "1", name: "Abusement Park", people: [
             Person(id: "1", name: "Dev", areaCode: "CASC"),
             Person(id: "2", name: "Joshua", areaCode: "LSC"),
-            Person(id: "3", name: "Alan", areaCode: "BSC")
+            Person(id: "3", name: "Alan", areaCode: "BSC"),
+            Person(id: "4", name: "Dev", areaCode: "CASC"),
+            Person(id: "5", name: "Joshua", areaCode: "LSC"),
+            Person(id: "6", name: "Alan", areaCode: "BSC")
         ]),
         Group(id: "2", name: "Band", people: [
             Person(id: "4", name: "Ezra", areaCode: "CASC"),
@@ -103,9 +106,21 @@ struct GeofenceView: View {
         
         print("Selected group: \(selectedGroup.name)")
         print("Monitored regions: \(geofenceManager.monitoredRegions.map { $0.identifier })")
+        print("Current user geofence: \(geofenceManager.currentUserGeofence ?? "none")")
         
-        // Group people by their area code
-        let groupedPeople = Dictionary(grouping: selectedGroup.people) { $0.areaCode }
+        // Only show people in the same geofence as the current user
+        guard let currentUserGeofence = geofenceManager.currentUserGeofence else {
+            print("User is not currently in any geofence")
+            return []
+        }
+        
+        // Filter people to only those in the same geofence as the current user
+        let peopleInCurrentGeofence = selectedGroup.people.filter { $0.areaCode == currentUserGeofence }
+        
+        print("People in current geofence (\(currentUserGeofence)): \(peopleInCurrentGeofence.map { $0.name })")
+        
+        // Group people by their area code (should all be the same now)
+        let groupedPeople = Dictionary(grouping: peopleInCurrentGeofence) { $0.areaCode }
         
         // Create annotations for each group of people
         let annotations = groupedPeople.compactMap { (areaCode, people) -> PersonAnnotation? in
@@ -165,6 +180,25 @@ struct GeofenceView: View {
                     }
                     .padding()
                 } else if geofenceManager.authorizationStatus == .authorizedAlways {
+                    // Status bar showing current user location
+                    HStack {
+                        Image(systemName: "location.fill")
+                            .foregroundColor(.blue)
+                        if let currentGeofence = geofenceManager.currentUserGeofence {
+                            Text("You are in: \(currentGeofence)")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        } else {
+                            Text("You are not in any tracked location")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.1))
+                    
                     Map(position: $cameraPosition) {
                         UserAnnotation()
                         ForEach(annotations) { annotation in
@@ -241,9 +275,17 @@ struct GeofenceView: View {
                                             VStack {
                                                 Text(group.name)
                                                     .font(.headline)
-                                                Text("\(group.people.count) people")
-                                                    .font(.caption)
-                                                    .foregroundColor(.gray)
+                                                // Show count of people in current geofence instead of total
+                                                if let currentGeofence = geofenceManager.currentUserGeofence {
+                                                    let peopleInCurrentGeofence = group.people.filter { $0.areaCode == currentGeofence }.count
+                                                    Text("\(peopleInCurrentGeofence) here")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                } else {
+                                                    Text("Enter a location")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                }
                                             }
                                             .padding()
                                             .background(selectedGroup?.id == group.id ? Color.blue.opacity(0.9) : Color.white.opacity(0.9))
@@ -288,4 +330,5 @@ struct GeofenceView: View {
             }
         }
     }
-} 
+}
+

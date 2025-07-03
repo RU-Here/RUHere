@@ -5,6 +5,7 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var monitoredRegions: [CLCircularRegion] = []
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published var currentUserGeofence: String? = nil // Track which geofence the user is currently in
     
     override init() {
         super.init()
@@ -18,6 +19,7 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.pausesLocationUpdatesAutomatically = false
         locationManager.showsBackgroundLocationIndicator = true
+        locationManager.startUpdatingLocation() // Start location updates
     }
     
     private func setupNotifications() {
@@ -75,8 +77,28 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                            radius: location.radius,
                            identifier: location.areaCode)
             }
+            
+            // Check current location to determine which geofence we're in
+            checkCurrentLocation()
         } catch {
             print("Error loading geofences: \(error.localizedDescription)")
+        }
+    }
+    
+    private func checkCurrentLocation() {
+        guard let currentLocation = locationManager.location else {
+            print("Current location not available")
+            return
+        }
+        
+        // Check which geofence contains the current location
+        for region in monitoredRegions {
+            let distance = currentLocation.distance(from: CLLocation(latitude: region.center.latitude, longitude: region.center.longitude))
+            if distance <= region.radius {
+                print("User is currently in geofence: \(region.identifier)")
+                currentUserGeofence = region.identifier
+                break
+            }
         }
     }
     
@@ -127,12 +149,36 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         print("Entered region: \(region.identifier)")
+        currentUserGeofence = region.identifier
         sendNotification(title: "Entered Region", body: "You have entered \(region.identifier)", category: "GEOFENCE_ENTER")
     }
     
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         print("Exited region: \(region.identifier)")
+        // Only clear current geofence if we're exiting the one we're currently in
+        if currentUserGeofence == region.identifier {
+            currentUserGeofence = nil
+        }
         sendNotification(title: "Exited Region", body: "You have exited \(region.identifier)", category: "GEOFENCE_EXIT")
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let currentLocation = locations.last else { return }
+        
+        // Check which geofence contains the current location
+        var foundGeofence: String? = nil
+        for region in monitoredRegions {
+            let distance = currentLocation.distance(from: CLLocation(latitude: region.center.latitude, longitude: region.center.longitude))
+            if distance <= region.radius {
+                foundGeofence = region.identifier
+                break
+            }
+        }
+        
+        // Update current geofence if it changed
+        if currentUserGeofence != foundGeofence {
+            currentUserGeofence = foundGeofence
+        }
     }
     
     private func sendNotification(title: String, body: String, category: String) {
