@@ -230,136 +230,7 @@ struct GeofenceView: View {
         NavigationView {
             ZStack {
                 Color.background.ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    if geofenceManager.authorizationStatus == .notDetermined {
-                        VStack(spacing: 24) {
-                            Spacer()
-                            
-                            Image(systemName: "location.circle")
-                                .font(.system(size: 80))
-                                .foregroundColor(.accent)
-                            
-                            VStack(spacing: 12) {
-                                Text("Location Permission")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                
-                                Text("We need your location to show you friends nearby")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                            
-                            Button(action: {
-                                geofenceManager.requestLocationPermission()
-                            }) {
-                                HStack {
-                                    Image(systemName: "location.fill")
-                                    Text("Enable Location")
-                                }
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 32)
-                                .padding(.vertical, 16)
-                                .background(
-                                    LinearGradient(
-                                        colors: [.accent, .accentLight],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .cornerRadius(25)
-                                .shadow(color: .accent.opacity(0.3), radius: 10, x: 0, y: 5)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding()
-                    } else if geofenceManager.authorizationStatus == .authorizedAlways {
-                        ModernStatusBar(currentGeofence: geofenceManager.currentUserGeofence)
-                        
-                        Map(position: $cameraPosition) {
-                            UserAnnotation()
-                            ForEach(annotations) { annotation in
-                                Annotation(annotation.identifier, coordinate: annotation.coordinate) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(
-                                                LinearGradient(
-                                                    colors: [.accent.opacity(0.2), .accentLight.opacity(0.1)],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing
-                                                )
-                                            )
-                                            .frame(width: CGFloat(annotation.radius * 2), height: CGFloat(annotation.radius * 2))
-                                        Circle()
-                                            .stroke(
-                                                LinearGradient(
-                                                    colors: [.accent, .accentLight],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing
-                                                ),
-                                                lineWidth: 3
-                                            )
-                                            .frame(width: CGFloat(annotation.radius * 2), height: CGFloat(annotation.radius * 2))
-                                    }
-                                    .contentShape(Circle())
-                                    .onTapGesture {
-                                        if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == annotation.identifier }) {
-                                            selectedRegion = region
-                                            showingRegionDetail = true
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            ForEach(personAnnotations) { annotation in
-                                Annotation(annotation.person.name, coordinate: annotation.coordinate) {
-                                    ModernPersonAnnotation(annotation: annotation)
-                                }
-                            }
-                        }
-                        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll, showsTraffic: false))
-                        .clipShape(RoundedRectangle(cornerRadius: 0))
-                        .onAppear {
-                            cameraPosition = .region(calculateMapRegion())
-                        }
-                        .onChange(of: geofenceManager.monitoredRegions) { oldValue, newValue in
-                            cameraPosition = .region(calculateMapRegion())
-                        }
-                        
-                        ModernGroupsSection(
-                            groups: groups,
-                            selectedGroup: $selectedGroup,
-                            currentGeofence: geofenceManager.currentUserGeofence
-                        )
-                    } else {
-                        VStack(spacing: 24) {
-                            Spacer()
-                            
-                            Image(systemName: "location.slash")
-                                .font(.system(size: 80))
-                                .foregroundColor(.secondary)
-                            
-                            VStack(spacing: 12) {
-                                Text("Location Access Denied")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                
-                                Text("Please enable location access in Settings to use this app")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding()
-                    }
-                }
+                mainContentView
             }
             .navigationTitle("RuHere")
             .navigationBarTitleDisplayMode(.large)
@@ -369,6 +240,177 @@ struct GeofenceView: View {
                 }
             }
         }
+    }
+    
+    @ViewBuilder
+    private var mainContentView: some View {
+        VStack(spacing: 0) {
+            switch geofenceManager.authorizationStatus {
+            case .notDetermined:
+                locationPermissionView
+            case .authorizedAlways:
+                authorizedView
+            default:
+                locationDeniedView
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var locationPermissionView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "location.circle")
+                .font(.system(size: 80))
+                .foregroundColor(.accent)
+            
+            VStack(spacing: 12) {
+                Text("Location Permission")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("We need your location to show you friends nearby")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+            
+            locationPermissionButton
+            
+            Spacer()
+        }
+        .padding()
+    }
+    
+    @ViewBuilder
+    private var locationPermissionButton: some View {
+        Button(action: {
+            geofenceManager.requestLocationPermission()
+        }) {
+            HStack {
+                Image(systemName: "location.fill")
+                Text("Enable Location")
+            }
+            .font(.headline)
+            .foregroundColor(.white)
+            .padding(.horizontal, 32)
+            .padding(.vertical, 16)
+            .background(
+                LinearGradient(
+                    colors: [.accent, .accentLight],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(25)
+            .shadow(color: .accent.opacity(0.3), radius: 10, x: 0, y: 5)
+        }
+    }
+    
+    @ViewBuilder
+    private var authorizedView: some View {
+        ModernStatusBar(currentGeofence: geofenceManager.currentUserGeofence)
+        
+        mapView
+        
+        ModernGroupsSection(
+            groups: groups,
+            selectedGroup: $selectedGroup,
+            currentGeofence: geofenceManager.currentUserGeofence
+        )
+    }
+    
+    @ViewBuilder
+    private var mapView: some View {
+        Map(position: $cameraPosition) {
+            UserAnnotation()
+            
+            ForEach(annotations) { annotation in
+                MapCircle(center: annotation.coordinate, radius: annotation.radius)
+                    .foregroundStyle(Color.accent.opacity(0.2))
+                    .stroke(Color.accent, lineWidth: 2)
+                
+                Annotation(annotation.identifier, coordinate: annotation.coordinate) {
+                    geofenceAnnotationView(for: annotation)
+                }
+            }
+            
+            ForEach(personAnnotations) { annotation in
+                Annotation(annotation.person.name, coordinate: annotation.coordinate) {
+                    ModernPersonAnnotation(annotation: annotation)
+                }
+            }
+        }
+        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll, showsTraffic: false))
+        .clipShape(RoundedRectangle(cornerRadius: 0))
+        .onAppear {
+            cameraPosition = .region(calculateMapRegion())
+        }
+        .onChange(of: geofenceManager.monitoredRegions) { oldValue, newValue in
+            cameraPosition = .region(calculateMapRegion())
+        }
+    }
+    
+    @ViewBuilder
+    private func geofenceAnnotationView(for annotation: GeofenceAnnotation) -> some View {
+        Button(action: {
+            if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == annotation.identifier }) {
+                selectedRegion = region
+                showingRegionDetail = true
+            }
+        }) {
+            VStack(spacing: 4) {
+                Image(systemName: "location.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(.accent)
+                    .background(
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 32, height: 32)
+                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                    )
+                
+                Text(annotation.identifier)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.accent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.white)
+                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                    )
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var locationDeniedView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "location.slash")
+                .font(.system(size: 80))
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 12) {
+                Text("Location Access Denied")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("Please enable location access in Settings to use this app")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+            
+            Spacer()
+        }
+        .padding()
     }
 }
 
