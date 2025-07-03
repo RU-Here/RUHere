@@ -135,11 +135,34 @@ router.get('/nearby/:locationId', async (req, res) => {
   }
 });
 
-// Endpoint: Get all groups
-router.get('/allGroups', async (req, res) => {
-  const groups = await db.collection('Groups').get();
+// Endpoint: Get all users
+router.get('/allUsers', async (req, res) => {
+  try {
+    const snapshot = await db.collection('Users').get();
+
+    const users = [];
+    snapshot.forEach(doc => {
+      users.push({userId: doc.id, ...doc.data()});
+    })
+    
+    res.status(200).send(users);
+  } catch (error) {
+    res.status(500).send({error: error.message});
+  }
+  
+});
+
+// Endpoint: Get all groups by user
+router.get('/allGroups/:userId', async (req, res) => {
+  const userId = req.params.userId;
 
   try {
+    const userRef = db.collection('Users').doc(userId);
+
+    const groups = await db.collection('Groups')
+      .where('people', 'array-contains', userRef)
+      .get();
+    
     const groupData = [];
     for (const doc of groups.docs) {
       const groupObjects = doc.data();
@@ -151,6 +174,7 @@ router.get('/allGroups', async (req, res) => {
             return { personId: personObject.id, ...personObject.data() }
         })
       )
+      
       groupData.push({ groupId: doc.id, ...doc.data(), people: peopleData });
 
     }
@@ -162,5 +186,34 @@ router.get('/allGroups', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+// Endpoint: Get all groups
+// router.get('/allGroups', async (req, res) => {
+//   const groups = await db.collection('Groups').get();
+
+//   try {
+//     const groupData = [];
+//     for (const doc of groups.docs) {
+//       const groupObjects = doc.data();
+//       const personRefs = groupObjects.people || [];
+
+//       const peopleData = await Promise.all(
+//         personRefs.map(async (ref) => {
+//           const personObject = await ref.get();
+//             return { personId: personObject.id, ...personObject.data() }
+//         })
+//       )
+//       groupData.push({ groupId: doc.id, ...doc.data(), people: peopleData });
+
+//     }
+//     console.log(groupData);
+//     console.log(groupData[0].people[0]);
+    
+//     res.status(200).send(groupData)
+//   } catch (error) {
+//     res.status(500).send({ error: error.message });
+//   }
+// });
+
 
 module.exports = router;
