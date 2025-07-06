@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>GIDClientID</key>
+	<string>107978976180-73l88ctguq7ks5ro66cidqk0e9evvnva.apps.googleusercontent.com</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>We need your location to monitor geofences even when the app is in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -15,5 +17,16 @@
 	</array>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>We need your location to monitor geofences even when the app is in the background.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.RUHere.RUHere</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.107978976180-73l88ctguq7ks5ro66cidqk0e9evvnva</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

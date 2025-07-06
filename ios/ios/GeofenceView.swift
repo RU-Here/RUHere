@@ -8,7 +8,7 @@ struct Person: Identifiable {
     let areaCode: String
 }
 
-struct Group: Identifiable {
+struct UserGroup: Identifiable {
     let id: String
     let name: String
     let people: [Person]
@@ -124,9 +124,9 @@ struct GeofenceView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var selectedRegion: CLCircularRegion?
     @State private var showingRegionDetail = false
-    @State private var selectedGroup: Group?
-    @State private var groups: [Group] = [
-        Group(id: "1", name: "Abusement Park", people: [
+    @State private var selectedGroup: UserGroup?
+    @State private var groups: [UserGroup] = [
+        UserGroup(id: "1", name: "Abusement Park", people: [
             Person(id: "1", name: "Dev", areaCode: "CASC"),
             Person(id: "2", name: "Joshua", areaCode: "LSC"),
             Person(id: "3", name: "Alan", areaCode: "BSC"),
@@ -134,12 +134,12 @@ struct GeofenceView: View {
             Person(id: "5", name: "Joshua", areaCode: "LSC"),
             Person(id: "6", name: "Alan", areaCode: "BSC")
         ], emoji: "🎢"),
-        Group(id: "2", name: "Band", people: [
+        UserGroup(id: "2", name: "Band", people: [
             Person(id: "4", name: "Ezra", areaCode: "CASC"),
             Person(id: "5", name: "Alicia", areaCode: "CASC"),
             Person(id: "6", name: "Hana", areaCode: "LSC")
         ], emoji: "🎵"),
-        Group(id: "3", name: "RuHere Dev", people: [
+        UserGroup(id: "3", name: "RuHere Dev", people: [
             Person(id: "7", name: "Jash", areaCode: "BSC"),
             Person(id: "8", name: "Matt", areaCode: "CASC"),
             Person(id: "9", name: "Adi", areaCode: "LSC")
@@ -519,8 +519,8 @@ struct ModernPersonAnnotation: View {
 }
 
 struct ModernGroupsSection: View {
-    let groups: [Group]
-    @Binding var selectedGroup: Group?
+    let groups: [UserGroup]
+    @Binding var selectedGroup: UserGroup?
     let currentGeofence: String?
     
     var body: some View {
@@ -560,7 +560,7 @@ struct ModernGroupsSection: View {
 }
 
 struct ModernGroupCard: View {
-    let group: Group
+    let group: UserGroup
     let isSelected: Bool
     let currentGeofence: String?
     let action: () -> Void

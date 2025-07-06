@@ -1,3 +1,3 @@
 # RuHere
 
-### never miss your friends irl.
+### find your friends wherever you go - no missed connections.
