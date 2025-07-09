@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,7 @@ class LocationService : Service() {
             ACTION_START -> start()
             ACTION_STOP -> stop()
         }
+        println("Location Service onStart works")
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -65,11 +67,13 @@ class LocationService : Service() {
             .launchIn(serviceScope)
 
         startForeground(1, notification.build())
+        println("start function works")
     }
 
     private fun stop() {
         stopForeground(true)
         stopSelf()
+        println("stop function works")
     }
 
     override fun onDestroy() {
@@ -78,7 +82,7 @@ class LocationService : Service() {
     }
 
     companion object {
-        const val ACTION_START = "ACTON_START"
+        const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
     }
 }

@@ -103,6 +103,7 @@ class MainActivity : ComponentActivity() {
                                 action = LocationService.ACTION_STOP
                                 startService(this)
                             }
+                            println("stop works")
                         }){
                         Text(text = "Stop")
                     }
