@@ -34,7 +34,7 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            if authService.user != nil {
+            if authService.canProceed {
                 MainAppView()
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .scale(scale: 0.8)),
@@ -48,7 +48,7 @@ struct ContentView: View {
                     ))
             }
         }
-        .animation(.easeInOut(duration: 0.6), value: authService.user?.uid)
+        .animation(.easeInOut(duration: 0.6), value: authService.canProceed)
     }
 }
 

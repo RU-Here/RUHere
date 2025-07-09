@@ -108,6 +108,24 @@ struct AuthenticationView: View {
                         .scaleEffect(authService.isLoading ? 0.95 : 1.0)
                         .animation(.easeInOut(duration: 0.1), value: authService.isLoading)
                         
+                        // Continue without signing in button
+                        Button(action: {
+                            authService.continueAsGuest()
+                        }) {
+                            Text("Continue without signing in")
+                                .font(.headline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.blue)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.blue, lineWidth: 2)
+                                        .fill(Color.clear)
+                                )
+                        }
+                        .disabled(authService.isLoading)
+                        
                         // Privacy Notice
                         VStack(spacing: 4) {
                             Text("By continuing, you agree to our")

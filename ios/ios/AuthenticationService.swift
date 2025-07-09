@@ -8,6 +8,7 @@ class AuthenticationService: ObservableObject {
     @Published var user: User?
     @Published var isLoading = false
     @Published var errorMessage = ""
+    @Published var isGuestMode = false
     
     init() {
         user = Auth.auth().currentUser
@@ -16,8 +17,23 @@ class AuthenticationService: ObservableObject {
         Auth.auth().addStateDidChangeListener { [weak self] auth, user in
             DispatchQueue.main.async {
                 self?.user = user
+                // If user signs out while in guest mode, reset guest mode
+                if user == nil && self?.isGuestMode == true {
+                    self?.isGuestMode = false
+                }
             }
         }
+    }
+    
+    // MARK: - Guest Mode
+    
+    func continueAsGuest() {
+        isGuestMode = true
+        errorMessage = ""
+    }
+    
+    var canProceed: Bool {
+        return user != nil || isGuestMode
     }
     
     // MARK: - Google Sign-In
@@ -46,6 +62,8 @@ class AuthenticationService: ObservableObject {
             
             let authResult = try await Auth.auth().signIn(with: credential)
             user = authResult.user
+            // Clear guest mode when user signs in
+            isGuestMode = false
         } catch {
             errorMessage = error.localizedDescription
             throw error
@@ -59,6 +77,7 @@ class AuthenticationService: ObservableObject {
     func signOut() throws {
         try Auth.auth().signOut()
         user = nil
+        isGuestMode = false
     }
     
     // MARK: - Private Helpers
