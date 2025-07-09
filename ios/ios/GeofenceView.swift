@@ -53,6 +53,58 @@ struct ModernCardView<Content: View>: View {
     }
 }
 
+struct FloatingStatusCard: View {
+    let currentGeofence: String?
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(currentGeofence != nil ? .green : .gray)
+                    .frame(width: 12, height: 12)
+                
+                if currentGeofence != nil {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(1.0)
+                        .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: currentGeofence != nil)
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                if let currentGeofence = currentGeofence {
+                    HStack(spacing: 4) {
+                        Text("📍 You're at")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(currentGeofence)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                    }
+                } else {
+                    Text("Not in any tracked location")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.background.opacity(0.8))
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+}
+
 struct RegionDetailView: View {
     let region: CLCircularRegion
     
@@ -299,7 +351,7 @@ struct GeofenceView: View {
             .padding(.vertical, 16)
             .background(
                 LinearGradient(
-                    colors: [.accent, .accentLight],
+                    colors: [Color.accent, Color.accentLight],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -311,7 +363,7 @@ struct GeofenceView: View {
     
     @ViewBuilder
     private var authorizedView: some View {
-        ModernStatusBar(currentGeofence: geofenceManager.currentUserGeofence)
+        FloatingStatusCard(currentGeofence: geofenceManager.currentUserGeofence)
         
         mapView
         
@@ -414,57 +466,6 @@ struct GeofenceView: View {
     }
 }
 
-struct ModernStatusBar: View {
-    let currentGeofence: String?
-    
-    var body: some View {
-        ModernCardView {
-            HStack(spacing: 12) {
-                Image(systemName: "location.fill")
-                    .font(.title3)
-                    .foregroundColor(.accent)
-                    .frame(width: 24, height: 24)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    if let currentGeofence = currentGeofence {
-                        HStack {
-                            Text("You're at")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(currentGeofence)
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.accent)
-                        }
-                        
-                    } else {
-                        Text("Not in any tracked location")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.secondary)
-                        
-                        Text("Move to a public location to find friends 👯")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                if currentGeofence != nil {
-                    Circle()
-                        .fill(.green)
-                        .frame(width: 8, height: 8)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-    }
-}
-
 struct ModernPersonAnnotation: View {
     let annotation: PersonAnnotation
     
@@ -474,7 +475,7 @@ struct ModernPersonAnnotation: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [.accent, .accentLight],
+                            colors: [Color.accent, Color.accentLight],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -501,19 +502,22 @@ struct ModernPersonAnnotation: View {
                 }
             }
             
-            ModernCardView {
-                VStack(spacing: 4) {
-                    ForEach(annotation.allPeople) { person in
-                        Text(person.name)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                    }
+            VStack(spacing: 4) {
+                ForEach(annotation.allPeople) { person in
+                    Text(person.name)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
             }
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.background.opacity(0.9))
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            )
         }
     }
 }
@@ -572,57 +576,55 @@ struct ModernGroupCard: View {
             
             action()
         }) {
-            ModernCardView {
-                VStack(spacing: 12) {
-                    Text(group.emoji)
-                        .font(.system(size: 32))
+            VStack(spacing: 12) {
+                Text(group.emoji)
+                    .font(.system(size: 32))
+                
+                VStack(spacing: 4) {
+                    Text(group.name)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(isSelected ? .white : .primary)
+                        .multilineTextAlignment(.center)
                     
-                    VStack(spacing: 4) {
-                        Text(group.name)
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(isSelected ? .white : .primary)
-                            .multilineTextAlignment(.center)
-                        
-                        if let currentGeofence = currentGeofence {
-                            let peopleInCurrentGeofence = group.people.filter { $0.areaCode == currentGeofence }.count
-                            Text("\(peopleInCurrentGeofence) here")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(isSelected ? .white.opacity(0.8) : .accent)
-                        } else {
-                            Text("Enter a location")
-                                .font(.caption)
-                                .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
-                        }
+                    if let currentGeofence = currentGeofence {
+                        let peopleInCurrentGeofence = group.people.filter { $0.areaCode == currentGeofence }.count
+                        Text("\(peopleInCurrentGeofence) here")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(isSelected ? .white.opacity(0.8) : .accent)
+                    } else {
+                        Text("Enter a location")
+                            .font(.caption)
+                            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 20)
-                .frame(width: 140, height: 120)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(
-                            isSelected 
-                            ? LinearGradient(
-                                colors: [.accent, .accentLight],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(
-                                colors: [.cardBackground, .cardBackground],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(
-                            color: isSelected ? .accent.opacity(0.3) : .black.opacity(0.1),
-                            radius: isSelected ? 12 : 8,
-                            x: 0,
-                            y: isSelected ? 6 : 4
-                        )
-                )
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            .frame(width: 140, height: 120)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        isSelected 
+                        ? LinearGradient(
+                            colors: [Color.accent, Color.accentLight],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(
+                            colors: [Color.background.opacity(0.8), Color.background.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(
+                        color: isSelected ? .accent.opacity(0.3) : .black.opacity(0.08),
+                        radius: isSelected ? 12 : 8,
+                        x: 0,
+                        y: isSelected ? 6 : 4
+                    )
+            )
         }
         .scaleEffect(isSelected ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
@@ -637,21 +639,24 @@ struct ModernAddGroupCard: View {
             
             // TODO: Implement add new group functionality
         }) {
-            ModernCardView {
-                VStack(spacing: 12) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.accent)
-                    
-                    Text("New Group")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 20)
-                .frame(width: 140, height: 120)
+            VStack(spacing: 12) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.accent)
+                
+                Text("New Group")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            .frame(width: 140, height: 120)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.background.opacity(0.8))
+                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            )
         }
     }
 }
