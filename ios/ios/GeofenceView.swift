@@ -177,6 +177,7 @@ struct GeofenceView: View {
     @State private var selectedRegion: CLCircularRegion?
     @State private var showingRegionDetail = false
     @State private var selectedGroup: UserGroup?
+    @State private var showingCreateGroup = false
     @State private var groups: [UserGroup] = [
         UserGroup(id: "1", name: "Abusement Park", people: [
             Person(id: "1", name: "Dev", areaCode: "CASC"),
@@ -291,6 +292,9 @@ struct GeofenceView: View {
                     RegionDetailView(region: region)
                 }
             }
+            .sheet(isPresented: $showingCreateGroup) {
+                CreateGroupView()
+            }
         }
     }
     
@@ -370,7 +374,8 @@ struct GeofenceView: View {
         ModernGroupsSection(
             groups: groups,
             selectedGroup: $selectedGroup,
-            currentGeofence: geofenceManager.currentUserGeofence
+            currentGeofence: geofenceManager.currentUserGeofence,
+            showingCreateGroup: $showingCreateGroup
         )
     }
     
@@ -526,6 +531,7 @@ struct ModernGroupsSection: View {
     let groups: [UserGroup]
     @Binding var selectedGroup: UserGroup?
     let currentGeofence: String?
+    @Binding var showingCreateGroup: Bool
     
     var body: some View {
         VStack(spacing: 16) {
@@ -553,7 +559,9 @@ struct ModernGroupsSection: View {
                     }
                     
                     // Add New Group Button
-                    ModernAddGroupCard()
+                    ModernAddGroupCard {
+                        showingCreateGroup = true
+                    }
                 }
                 .padding(.horizontal, 20)
             }
@@ -632,12 +640,14 @@ struct ModernGroupCard: View {
 }
 
 struct ModernAddGroupCard: View {
+    let action: () -> Void
+    
     var body: some View {
         Button(action: {
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
             impactFeedback.impactOccurred()
             
-            // TODO: Implement add new group functionality
+            action()
         }) {
             VStack(spacing: 12) {
                 Image(systemName: "plus.circle.fill")
@@ -657,6 +667,156 @@ struct ModernAddGroupCard: View {
                     .fill(Color.background.opacity(0.8))
                     .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
             )
+        }
+    }
+}
+
+struct CreateGroupView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var groupName = ""
+    @State private var selectedEmoji = "🏠"
+
+    
+    private let availableEmojis = [
+        "🏠", "🏢", "🎓", "🍕", "☕️", "🛒", "🏥", "🏛️",
+        "🚗", "✈️", "🚇", "🏃‍♂️", "💼", "🎭", "🎪", "🌮"
+    ]
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 24) {
+                    Text("Create New Group")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    // Emoji Selection
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Choose an Icon")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 12) {
+                            ForEach(availableEmojis, id: \.self) { emoji in
+                                Button(action: {
+                                    selectedEmoji = emoji
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                }) {
+                                    let isSelected = selectedEmoji == emoji
+                                    let backgroundColor = isSelected ? Color.blue.opacity(0.2) : Color.background.opacity(0.8)
+                                    let borderColor = isSelected ? Color.blue : Color.clear
+                                    
+                                    Text(emoji)
+                                        .font(.title2)
+                                        .frame(width: 44, height: 44)
+                                        .background(backgroundColor)
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(borderColor, lineWidth: 2)
+                                        )
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                
+                // Form Section
+                VStack(spacing: 20) {
+                    // Group Name
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Group Name")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Enter group name", text: $groupName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .font(.body)
+                    }
+                    
+                    // Info about adding people
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Adding People")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        Text("People can join this group using invite links after creation.")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 32)
+                
+                Spacer()
+                
+                // Action Buttons
+                VStack(spacing: 12) {
+                    Button(action: createGroup) {
+                        let isDisabled = groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        let buttonOpacity = isDisabled ? 0.6 : 1.0
+                        
+                        HStack {
+                            Text("Create Group")
+                                .fontWeight(.semibold)
+                            
+                            Image(systemName: "arrow.right")
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                        .opacity(buttonOpacity)
+                    }
+                    .disabled(groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Text("Cancel")
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+            }
+            .background(Color.background)
+        }
+    }
+    
+
+    
+    private func createGroup() {
+        let trimmedName = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty {
+            // TODO: Save the group (name: trimmedName, emoji: selectedEmoji, people: [])
+            print("Creating group: \(trimmedName) \(selectedEmoji)")
+            
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
+            
+            dismiss()
         }
     }
 }
