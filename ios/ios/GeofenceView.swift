@@ -27,6 +27,7 @@ struct PersonAnnotation: Identifiable {
     let person: Person
     let coordinate: CLLocationCoordinate2D
     let allPeople: [Person]
+    let group: UserGroup? // Added to track which group these people belong to
 }
 
 extension Color {
@@ -216,40 +217,85 @@ struct GeofenceView: View {
     }
     
     private var personAnnotations: [PersonAnnotation] {
-        guard let selectedGroup = selectedGroup else { return [] }
-        
-        print("Selected group: \(selectedGroup.name)")
-        print("Monitored regions: \(geofenceManager.monitoredRegions.map { $0.identifier })")
-        print("Current user geofence: \(geofenceManager.currentUserGeofence ?? "none")")
-        
-        // Only show people in the same geofence as the current user
         guard let currentUserGeofence = geofenceManager.currentUserGeofence else {
             print("User is not currently in any geofence")
             return []
         }
         
-        // Filter people to only those in the same geofence as the current user
-        let peopleInCurrentGeofence = selectedGroup.people.filter { $0.areaCode == currentUserGeofence }
+        print("Monitored regions: \(geofenceManager.monitoredRegions.map { $0.identifier })")
+        print("Current user geofence: \(currentUserGeofence)")
         
-        print("People in current geofence (\(currentUserGeofence)): \(peopleInCurrentGeofence.map { $0.name })")
-        
-        // Group people by their area code (should all be the same now)
-        let groupedPeople = Dictionary(grouping: peopleInCurrentGeofence) { $0.areaCode }
-        
-        // Create annotations for each group of people
-        let annotations = groupedPeople.compactMap { (areaCode, people) -> PersonAnnotation? in
-            print("Checking area: \(areaCode) with \(people.count) people")
-            if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == areaCode }) {
-                print("Found matching region for area: \(areaCode)")
-                // Use the first person as the representative for the group
-                return PersonAnnotation(person: people[0], coordinate: region.center, allPeople: people)
+        if let selectedGroup = selectedGroup {
+            // If a group is selected, only show people from that group
+            print("Selected group: \(selectedGroup.name)")
+            
+            // Filter people to only those in the same geofence as the current user
+            let peopleInCurrentGeofence = selectedGroup.people.filter { $0.areaCode == currentUserGeofence }
+            
+            print("People in current geofence (\(currentUserGeofence)): \(peopleInCurrentGeofence.map { $0.name })")
+            
+            // Group people by their area code (should all be the same now)
+            let groupedPeople = Dictionary(grouping: peopleInCurrentGeofence) { $0.areaCode }
+            
+            // Create annotations for each group of people
+            let annotations = groupedPeople.compactMap { (areaCode, people) -> PersonAnnotation? in
+                print("Checking area: \(areaCode) with \(people.count) people")
+                if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == areaCode }) {
+                    print("Found matching region for area: \(areaCode)")
+                    // Use the first person as the representative for the group
+                    return PersonAnnotation(person: people[0], coordinate: region.center, allPeople: people, group: selectedGroup)
+                }
+                print("No matching region found for area: \(areaCode)")
+                return nil
             }
-            print("No matching region found for area: \(areaCode)")
-            return nil
+            
+            print("Generated \(annotations.count) person annotations")
+            return annotations
+        } else {
+            // If no group is selected, show all people from all groups in the current geofence
+            print("No group selected, showing all people in current geofence")
+            
+            // Collect all people from all groups who are in the current geofence
+            var allPeopleInGeofence: [(Person, UserGroup)] = []
+            for group in groups {
+                let peopleInGeofence = group.people.filter { $0.areaCode == currentUserGeofence }
+                for person in peopleInGeofence {
+                    allPeopleInGeofence.append((person, group))
+                }
+            }
+            
+            print("All people in current geofence: \(allPeopleInGeofence.map { "\($0.0.name) (\($0.1.name))" })")
+            
+            // Group people by their group
+            let peopleByGroup = Dictionary(grouping: allPeopleInGeofence) { $0.1.id }
+            
+            // Create annotations for each group that has people in the current geofence
+            let sortedGroupIds = Array(peopleByGroup.keys).sorted() // Ensure consistent ordering
+            let annotations = sortedGroupIds.enumerated().compactMap { (index, groupId) -> PersonAnnotation? in
+                guard let peopleWithGroups = peopleByGroup[groupId] else { return nil }
+                
+                let people = peopleWithGroups.map { $0.0 }
+                let group = peopleWithGroups.first?.1
+                
+                print("Creating annotation for group: \(group?.name ?? "Unknown") with \(people.count) people")
+                
+                if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == currentUserGeofence }) {
+                    // Calculate offset position to scatter groups
+                    let scatteredCoordinate = calculateScatteredPosition(
+                        centerCoordinate: region.center,
+                        radius: region.radius,
+                        groupIndex: index,
+                        totalGroups: sortedGroupIds.count
+                    )
+                    
+                    return PersonAnnotation(person: people[0], coordinate: scatteredCoordinate, allPeople: people, group: group)
+                }
+                return nil
+            }
+            
+            print("Generated \(annotations.count) group annotations")
+            return annotations
         }
-        
-        print("Generated \(annotations.count) person annotations")
-        return annotations
     }
     
     private func calculateMapRegion() -> MKCoordinateRegion {
@@ -316,6 +362,38 @@ struct GeofenceView: View {
                 latitudeDelta: max(latitudeDelta, 0.005), // Reduced minimum zoom for tighter zoom
                 longitudeDelta: max(longitudeDelta, 0.005)
             )
+        )
+    }
+    
+    private func calculateScatteredPosition(
+        centerCoordinate: CLLocationCoordinate2D,
+        radius: CLLocationDistance,
+        groupIndex: Int,
+        totalGroups: Int
+    ) -> CLLocationCoordinate2D {
+        // If only one group, keep it at center
+        guard totalGroups > 1 else {
+            return centerCoordinate
+        }
+        
+        // Use 40% of the radius to keep groups well within the geofence
+        let offsetDistance = radius * 0.4
+        
+        // Calculate angle for this group (evenly distributed around circle)
+        let angleStep = (2.0 * Double.pi) / Double(totalGroups)
+        let angle = Double(groupIndex) * angleStep
+        
+        // Convert offset from meters to coordinate degrees
+        let metersPerDegreeLatitude = 111000.0
+        let metersPerDegreeLongitude = 111000.0 * cos(centerCoordinate.latitude * .pi / 180.0)
+        
+        // Calculate offset in latitude and longitude
+        let latitudeOffset = (offsetDistance * cos(angle)) / metersPerDegreeLatitude
+        let longitudeOffset = (offsetDistance * sin(angle)) / metersPerDegreeLongitude
+        
+        return CLLocationCoordinate2D(
+            latitude: centerCoordinate.latitude + latitudeOffset,
+            longitude: centerCoordinate.longitude + longitudeOffset
         )
     }
     
@@ -420,7 +498,7 @@ struct GeofenceView: View {
                 )
             )
             .cornerRadius(25)
-            .shadow(color: .accent.opacity(0.3), radius: 10, x: 0, y: 5)
+                                .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
         }
     }
     
@@ -532,7 +610,7 @@ struct GeofenceView: View {
                             Circle()
                                 .fill(.white)
                                 .frame(width: 40, height: 40)
-                                .shadow(color: .accent.opacity(0.4), radius: 8, x: 0, y: 4)
+                                .shadow(color: Color.accent.opacity(0.4), radius: 8, x: 0, y: 4)
                         )
                 } else {
                     Image(systemName: "location.circle")
@@ -556,7 +634,7 @@ struct GeofenceView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.ultraThinMaterial)
                             .shadow(
-                                color: isCurrentGeofence ? .accent.opacity(0.3) : .black.opacity(0.1), 
+                                color: isCurrentGeofence ? Color.accent.opacity(0.3) : .black.opacity(0.1), 
                                 radius: isCurrentGeofence ? 6 : 2, 
                                 x: 0, 
                                 y: isCurrentGeofence ? 3 : 1
@@ -609,11 +687,16 @@ struct ModernPersonAnnotation: View {
                         )
                     )
                     .frame(width: 50, height: 50)
-                    .shadow(color: .accent.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: Color.accent.opacity(0.3), radius: 8, x: 0, y: 4)
                 
-                Image(systemName: "person.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
+                if let group = annotation.group {
+                    Text(group.emoji)
+                        .font(.title2)
+                } else {
+                    Image(systemName: "person.fill")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                }
                 
                 if annotation.allPeople.count > 1 {
                     Text("\(annotation.allPeople.count)")
@@ -631,6 +714,20 @@ struct ModernPersonAnnotation: View {
             }
             
             VStack(spacing: 4) {
+                // Show group name if we have group information
+                if let group = annotation.group {
+                    Text(group.name)
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.accent)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.accent.opacity(0.1))
+                        )
+                }
+                
                 ForEach(annotation.allPeople) { person in
                     Text(person.name)
                         .font(.caption)
@@ -762,7 +859,7 @@ struct ModernGroupCard: View {
                         RoundedRectangle(cornerRadius: 20)
                             .stroke(isSelected ? Color.accent : Color.clear, lineWidth: isSelected ? 2 : 0)
                     )
-                    .shadow(color: isSelected ? .accent.opacity(0.4) : .black.opacity(0.08), radius: isSelected ? 15 : 8, x: 0, y: isSelected ? 8 : 4)
+                    .shadow(color: isSelected ? Color.accent.opacity(0.4) : .black.opacity(0.08), radius: isSelected ? 15 : 8, x: 0, y: isSelected ? 8 : 4)
             )
         }
         .scaleEffect(isSelected ? 1.05 : 1.0)
