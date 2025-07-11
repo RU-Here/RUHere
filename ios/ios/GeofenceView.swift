@@ -34,6 +34,10 @@ extension Color {
     static let accentLight = Color(red: 1.0, green: 0.4, blue: 0.4)
     static let background = Color(red: 0.98, green: 0.98, blue: 1.0)
     static let cardBackground = Color.white
+    
+    // Highlighted geofence colors
+    static let highlightedGeofence = Color(red: 0.0, green: 0.8, blue: 1.0) // Bright cyan
+    static let highlightedGeofenceLight = Color(red: 0.3, green: 0.9, blue: 1.0)
 }
 
 struct ModernCardView<Content: View>: View {
@@ -385,12 +389,20 @@ struct GeofenceView: View {
             UserAnnotation()
             
             ForEach(annotations) { annotation in
-                MapCircle(center: annotation.coordinate, radius: annotation.radius)
-                    .foregroundStyle(Color.accent.opacity(0.2))
-                    .stroke(Color.accent, lineWidth: 2)
+                let isCurrentGeofence = annotation.identifier == geofenceManager.currentUserGeofence
+                
+                if isCurrentGeofence {
+                    MapCircle(center: annotation.coordinate, radius: annotation.radius)
+                        .foregroundStyle(Color.green.opacity(0.4))
+                        .stroke(Color.green, lineWidth: 6)
+                } else {
+                    MapCircle(center: annotation.coordinate, radius: annotation.radius)
+                        .foregroundStyle(Color.gray.opacity(0.15))
+                        .stroke(Color.gray, lineWidth: 1)
+                }
                 
                 Annotation(annotation.identifier, coordinate: annotation.coordinate) {
-                    geofenceAnnotationView(for: annotation)
+                    geofenceAnnotationView(for: annotation, isCurrentGeofence: isCurrentGeofence)
                 }
             }
             
@@ -411,7 +423,7 @@ struct GeofenceView: View {
     }
     
     @ViewBuilder
-    private func geofenceAnnotationView(for annotation: GeofenceAnnotation) -> some View {
+    private func geofenceAnnotationView(for annotation: GeofenceAnnotation, isCurrentGeofence: Bool) -> some View {
         Button(action: {
             if let region = geofenceManager.monitoredRegions.first(where: { $0.identifier == annotation.identifier }) {
                 selectedRegion = region
@@ -419,26 +431,43 @@ struct GeofenceView: View {
             }
         }) {
             VStack(spacing: 4) {
-                Image(systemName: "location.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(.accent)
-                    .background(
-                        Circle()
-                            .fill(.white)
-                            .frame(width: 32, height: 32)
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                    )
+                if isCurrentGeofence {
+                    Image(systemName: "location.fill.viewfinder")
+                        .font(.title)
+                        .foregroundColor(.green)
+                        .background(
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 40, height: 40)
+                                .shadow(color: .green.opacity(0.4), radius: 8, x: 0, y: 4)
+                        )
+                } else {
+                    Image(systemName: "location.circle")
+                        .font(.callout)
+                        .foregroundColor(.gray)
+                        .background(
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 24, height: 24)
+                                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        )
+                }
                 
                 Text(annotation.identifier)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.accent)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .font(isCurrentGeofence ? .caption : .caption2)
+                    .fontWeight(isCurrentGeofence ? .bold : .medium)
+                    .foregroundColor(isCurrentGeofence ? .green : .gray)
+                    .padding(.horizontal, isCurrentGeofence ? 12 : 6)
+                    .padding(.vertical, isCurrentGeofence ? 6 : 3)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.white)
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            .shadow(
+                                color: isCurrentGeofence ? .green.opacity(0.3) : .black.opacity(0.1), 
+                                radius: isCurrentGeofence ? 6 : 2, 
+                                x: 0, 
+                                y: isCurrentGeofence ? 3 : 1
+                            )
                     )
             }
         }
