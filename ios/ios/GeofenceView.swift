@@ -182,6 +182,7 @@ struct GeofenceView: View {
     @State private var showingRegionDetail = false
     @State private var selectedGroup: UserGroup?
     @State private var showingCreateGroup = false
+    @State private var showingProfile = false
     @State private var groups: [UserGroup] = [
         UserGroup(id: "1", name: "Abusement Park", people: [
             Person(id: "1", name: "Dev", areaCode: "CASC"),
@@ -287,7 +288,24 @@ struct GeofenceView: View {
         NavigationView {
             mainContentView
             .navigationTitle("RuHere")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(false)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        showingProfile = true
+                    }) {
+                        Image(systemName: "person.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.blue)
+                            .background(
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .frame(width: 36, height: 36)
+                            )
+                    }
+                }
+            }
             .sheet(isPresented: $showingRegionDetail) {
                 if let region = selectedRegion {
                     RegionDetailView(region: region)
@@ -296,12 +314,15 @@ struct GeofenceView: View {
             .sheet(isPresented: $showingCreateGroup) {
                 CreateGroupView()
             }
+            .sheet(isPresented: $showingProfile) {
+                ProfileView()
+            }
         }
     }
     
     @ViewBuilder
     private var mainContentView: some View {
-        VStack(spacing: 0) {
+        ZStack {
             switch geofenceManager.authorizationStatus {
             case .notDetermined:
                 locationPermissionView
@@ -311,6 +332,7 @@ struct GeofenceView: View {
                 locationDeniedView
             }
         }
+        .ignoresSafeArea(.all, edges: .bottom)
     }
     
     @ViewBuilder
@@ -370,8 +392,9 @@ struct GeofenceView: View {
     @ViewBuilder
     private var authorizedView: some View {
         ZStack {
-            // Map as background
+            // Map as background - fills entire screen
             mapView
+                .ignoresSafeArea(.all)
             
             // Floating components overlay
             VStack(spacing: 0) {
@@ -610,14 +633,10 @@ struct ModernGroupsSection: View {
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.red.opacity(0.1)) // Temporary debug background
-                )
                 .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
         )
         .padding(.horizontal, 16)
-        .padding(.bottom, 10) // Extra bottom space for shadows
+        .padding(.bottom, 34) // Safe area bottom padding
     }
 }
 

@@ -54,35 +54,8 @@ struct ContentView: View {
 
 struct MainAppView: View {
     @EnvironmentObject var authService: AuthenticationService
-    @State private var selectedTab = 0
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Main Map View
-            GeofenceView()
-                .tabItem {
-                    Image(systemName: "location.fill")
-                    Text("Map")
-                }
-                .tag(0)
-            
-            // Profile View
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.circle.fill")
-                    Text("Profile")
-                }
-                .tag(1)
-        }
-        .accentColor(.blue)
-        .onAppear {
-            // Set the tab bar appearance
-            let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor.systemBackground
-            
-            UITabBar.appearance().standardAppearance = appearance
-            UITabBar.appearance().scrollEdgeAppearance = appearance
-        }
+        GeofenceView()
     }
 }
