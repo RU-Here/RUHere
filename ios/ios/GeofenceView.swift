@@ -101,8 +101,8 @@ struct FloatingStatusCard: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.background.opacity(0.8))
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+                .fill(.ultraThinMaterial)
+                .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
         )
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -285,10 +285,7 @@ struct GeofenceView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                Color.background.ignoresSafeArea()
-                mainContentView
-            }
+            mainContentView
             .navigationTitle("RuHere")
             .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showingRegionDetail) {
@@ -342,6 +339,7 @@ struct GeofenceView: View {
             Spacer()
         }
         .padding()
+        .background(Color.background.ignoresSafeArea())
     }
     
     @ViewBuilder
@@ -371,16 +369,25 @@ struct GeofenceView: View {
     
     @ViewBuilder
     private var authorizedView: some View {
-        FloatingStatusCard(currentGeofence: geofenceManager.currentUserGeofence)
-        
-        mapView
-        
-        ModernGroupsSection(
-            groups: groups,
-            selectedGroup: $selectedGroup,
-            currentGeofence: geofenceManager.currentUserGeofence,
-            showingCreateGroup: $showingCreateGroup
-        )
+        ZStack {
+            // Map as background
+            mapView
+            
+            // Floating components overlay
+            VStack(spacing: 0) {
+                FloatingStatusCard(currentGeofence: geofenceManager.currentUserGeofence)
+                
+                Spacer(minLength: 0)
+                
+                ModernGroupsSection(
+                    groups: groups,
+                    selectedGroup: $selectedGroup,
+                    currentGeofence: geofenceManager.currentUserGeofence,
+                    showingCreateGroup: $showingCreateGroup
+                )
+            }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+        }
     }
     
     @ViewBuilder
@@ -461,7 +468,7 @@ struct GeofenceView: View {
                     .padding(.vertical, isCurrentGeofence ? 6 : 3)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(.white)
+                            .fill(.ultraThinMaterial)
                             .shadow(
                                 color: isCurrentGeofence ? .green.opacity(0.3) : .black.opacity(0.1), 
                                 radius: isCurrentGeofence ? 6 : 2, 
@@ -497,6 +504,7 @@ struct GeofenceView: View {
             Spacer()
         }
         .padding()
+        .background(Color.background.ignoresSafeArea())
     }
 }
 
@@ -549,7 +557,7 @@ struct ModernPersonAnnotation: View {
             .padding(.vertical, 4)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.background.opacity(0.9))
+                    .fill(.ultraThinMaterial)
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             )
         }
@@ -585,18 +593,31 @@ struct ModernGroupsSection: View {
                                 selectedGroup = selectedGroup?.id == group.id ? nil : group
                             }
                         }
+                        .padding(.vertical, 10) // Extra space for scaling and shadow
                     }
                     
                     // Add New Group Button
                     ModernAddGroupCard {
                         showingCreateGroup = true
                     }
+                    .padding(.vertical, 10) // Consistent spacing
                 }
                 .padding(.horizontal, 20)
+                .padding(.vertical, 5) // Additional space for shadows
             }
         }
         .padding(.vertical, 20)
-        .background(Color.background)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.red.opacity(0.1)) // Temporary debug background
+                )
+                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+        )
+        .padding(.horizontal, 16)
+        .padding(.bottom, 10) // Extra bottom space for shadows
     }
 }
 
@@ -642,29 +663,29 @@ struct ModernGroupCard: View {
             .frame(width: 140, height: 120)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        isSelected 
-                        ? LinearGradient(
-                            colors: [Color.accent, Color.accentLight],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        : LinearGradient(
-                            colors: [Color.background.opacity(0.8), Color.background.opacity(0.8)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                    .fill(isSelected ? .thinMaterial : .ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(
+                                LinearGradient(
+                                    colors: isSelected 
+                                    ? [Color.accent.opacity(0.8), Color.accentLight.opacity(0.6)]
+                                    : [Color.clear, Color.clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                     )
-                    .shadow(
-                        color: isSelected ? .accent.opacity(0.3) : .black.opacity(0.08),
-                        radius: isSelected ? 12 : 8,
-                        x: 0,
-                        y: isSelected ? 6 : 4
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(isSelected ? Color.accent : Color.clear, lineWidth: isSelected ? 2 : 0)
                     )
+                    .shadow(color: isSelected ? .accent.opacity(0.4) : .black.opacity(0.08), radius: isSelected ? 15 : 8, x: 0, y: isSelected ? 8 : 4)
             )
         }
         .scaleEffect(isSelected ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
+        .allowsHitTesting(true)
     }
 }
 
@@ -693,7 +714,7 @@ struct ModernAddGroupCard: View {
             .frame(width: 140, height: 120)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.background.opacity(0.8))
+                    .fill(.ultraThinMaterial)
                     .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
             )
         }
@@ -707,7 +728,7 @@ struct CreateGroupView: View {
 
     
     private let availableEmojis = [
-        "🏠", "🏢", "🎓", "🍕", "☕️", "🛒", "🏥", "🏛️",
+        "🏠", "🏢", "🎓", "🍕", "☕️", "🛒", "🍔", "🏛️",
         "🚗", "✈️", "🚇", "🏃‍♂️", "💼", "🎭", "🎪", "🌮"
     ]
     
