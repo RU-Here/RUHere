@@ -64,12 +64,12 @@ struct FloatingStatusCard: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(currentGeofence != nil ? .green : .gray)
+                    .fill(currentGeofence != nil ? Color.accent : .gray)
                     .frame(width: 12, height: 12)
                 
                 if currentGeofence != nil {
                     Circle()
-                        .fill(.green)
+                        .fill(Color.accent)
                         .frame(width: 8, height: 8)
                         .scaleEffect(1.0)
                         .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: currentGeofence != nil)
@@ -183,6 +183,7 @@ struct GeofenceView: View {
     @State private var selectedGroup: UserGroup?
     @State private var showingCreateGroup = false
     @State private var showingProfile = false
+    @State private var hasPerformedInitialZoom = false
     @State private var groups: [UserGroup] = [
         UserGroup(id: "1", name: "Abusement Park", people: [
             Person(id: "1", name: "Dev", areaCode: "CASC"),
@@ -252,6 +253,10 @@ struct GeofenceView: View {
     }
     
     private func calculateMapRegion() -> MKCoordinateRegion {
+        return calculateAllGeofencesRegion()
+    }
+    
+    private func calculateAllGeofencesRegion() -> MKCoordinateRegion {
         guard !geofenceManager.monitoredRegions.isEmpty else {
             return MKCoordinateRegion(
                 center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
@@ -282,6 +287,36 @@ struct GeofenceView: View {
         )
         
         return MKCoordinateRegion(center: center, span: span)
+    }
+    
+    private func animateToCurrentGeofenceIfNeeded() {
+        guard let currentGeofence = geofenceManager.currentUserGeofence,
+              let currentRegion = geofenceManager.monitoredRegions.first(where: { $0.identifier == currentGeofence }) else {
+            return
+        }
+        
+        withAnimation(.easeInOut(duration: 1.5)) {
+            cameraPosition = .region(calculateRegionForGeofence(currentRegion))
+        }
+    }
+    
+    private func calculateRegionForGeofence(_ geofence: CLCircularRegion) -> MKCoordinateRegion {
+        // Calculate span based on geofence radius
+        // Convert radius from meters to approximate degrees
+        let metersPerDegreeLatitude = 111000.0
+        let metersPerDegreeLongitude = 111000.0 * cos(geofence.center.latitude * .pi / 180.0)
+        
+        // Use smaller multiplier to zoom in more (geofence covers more of screen)
+        let latitudeDelta = (geofence.radius * 1.2) / metersPerDegreeLatitude
+        let longitudeDelta = (geofence.radius * 1.2) / metersPerDegreeLongitude
+        
+        return MKCoordinateRegion(
+            center: geofence.center,
+            span: MKCoordinateSpan(
+                latitudeDelta: max(latitudeDelta, 0.005), // Reduced minimum zoom for tighter zoom
+                longitudeDelta: max(longitudeDelta, 0.005)
+            )
+        )
     }
     
     var body: some View {
@@ -423,8 +458,8 @@ struct GeofenceView: View {
                 
                 if isCurrentGeofence {
                     MapCircle(center: annotation.coordinate, radius: annotation.radius)
-                        .foregroundStyle(Color.green.opacity(0.4))
-                        .stroke(Color.green, lineWidth: 6)
+                        .foregroundStyle(Color.accent.opacity(0.4))
+                        .stroke(Color.accent, lineWidth: 3)
                 } else {
                     MapCircle(center: annotation.coordinate, radius: annotation.radius)
                         .foregroundStyle(Color.gray.opacity(0.15))
@@ -446,9 +481,37 @@ struct GeofenceView: View {
         .clipShape(RoundedRectangle(cornerRadius: 0))
         .onAppear {
             cameraPosition = .region(calculateMapRegion())
+            
+            // Animate to current geofence after map is visible
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if !hasPerformedInitialZoom {
+                    animateToCurrentGeofenceIfNeeded()
+                    hasPerformedInitialZoom = true
+                }
+            }
         }
         .onChange(of: geofenceManager.monitoredRegions) { oldValue, newValue in
             cameraPosition = .region(calculateMapRegion())
+            hasPerformedInitialZoom = false
+            
+            // Animate to current geofence after region update
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                if !hasPerformedInitialZoom {
+                    animateToCurrentGeofenceIfNeeded()
+                    hasPerformedInitialZoom = true
+                }
+            }
+        }
+        .onChange(of: geofenceManager.currentUserGeofence) { oldValue, newValue in
+            if newValue != nil {
+                // User entered a geofence - animate to it
+                animateToCurrentGeofenceIfNeeded()
+            } else {
+                // User left all geofences - zoom out to show all
+                withAnimation(.easeInOut(duration: 1.0)) {
+                    cameraPosition = .region(calculateAllGeofencesRegion())
+                }
+            }
         }
     }
     
@@ -464,12 +527,12 @@ struct GeofenceView: View {
                 if isCurrentGeofence {
                     Image(systemName: "location.fill.viewfinder")
                         .font(.title)
-                        .foregroundColor(.green)
+                        .foregroundColor(.accent)
                         .background(
                             Circle()
                                 .fill(.white)
                                 .frame(width: 40, height: 40)
-                                .shadow(color: .green.opacity(0.4), radius: 8, x: 0, y: 4)
+                                .shadow(color: .accent.opacity(0.4), radius: 8, x: 0, y: 4)
                         )
                 } else {
                     Image(systemName: "location.circle")
@@ -486,14 +549,14 @@ struct GeofenceView: View {
                 Text(annotation.identifier)
                     .font(isCurrentGeofence ? .caption : .caption2)
                     .fontWeight(isCurrentGeofence ? .bold : .medium)
-                    .foregroundColor(isCurrentGeofence ? .green : .gray)
+                    .foregroundColor(isCurrentGeofence ? .accent : .gray)
                     .padding(.horizontal, isCurrentGeofence ? 12 : 6)
                     .padding(.vertical, isCurrentGeofence ? 6 : 3)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.ultraThinMaterial)
                             .shadow(
-                                color: isCurrentGeofence ? .green.opacity(0.3) : .black.opacity(0.1), 
+                                color: isCurrentGeofence ? .accent.opacity(0.3) : .black.opacity(0.1), 
                                 radius: isCurrentGeofence ? 6 : 2, 
                                 x: 0, 
                                 y: isCurrentGeofence ? 3 : 1
