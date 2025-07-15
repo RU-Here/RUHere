@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="RUHere Geofencing App" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Rutgers University Geofence Locations</name>
+    <desc>Student center locations for RUHere geofencing app testing</desc>
+  </metadata>
+  
+  <!-- College Avenue Student Center -->
+  <wpt lat="40.5014" lon="-74.4474">
+    <name>College Avenue Student Center</name>
+    <desc>CASC - Main campus student center with 150m geofence radius</desc>
+    <sym>Building</sym>
+  </wpt>
+  
+  <!-- Livingston Student Center -->
+  <wpt lat="40.5243" lon="-74.4370">
+    <name>Livingston Student Center</name>
+    <desc>LSC - Livingston campus student center with 150m geofence radius</desc>
+    <sym>Building</sym>
+  </wpt>
+  
+  <!-- Busch Student Center -->
+  <wpt lat="40.5230" lon="-74.4573">
+    <name>Busch Student Center</name>
+    <desc>BSC - Busch campus student center with 150m geofence radius</desc>
+    <sym>Building</sym>
+  </wpt>
+  
+  <!-- Cook Student Center -->
+  <wpt lat="40.4807" lon="-74.4366">
+    <name>Cook Student Center</name>
+    <desc>CSC - Cook campus student center with 150m geofence radius</desc>
+    <sym>Building</sym>
+  </wpt>
+  
+  <!-- Sample route for testing geofence transitions -->
+  <trk>
+    <name>Rutgers Campus Route</name>
+    <desc>Sample route visiting all student centers for geofence testing</desc>
+    <trkseg>
+      <trkpt lat="40.5014" lon="-74.4474">
+        <name>Start - CASC</name>
+      </trkpt>
+      <trkpt lat="40.5243" lon="-74.4370">
+        <name>LSC</name>
+      </trkpt>
+      <trkpt lat="40.5230" lon="-74.4573">
+        <name>BSC</name>
+      </trkpt>
+      <trkpt lat="40.4807" lon="-74.4366">
+        <name>CSC</name>
+      </trkpt>
+      <trkpt lat="40.5014" lon="-74.4474">
+        <name>End - CASC</name>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

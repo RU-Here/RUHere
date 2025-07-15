@@ -1,0 +1,32 @@
+{
+  "locations": [
+    {
+      "name": "College Avenue Student Center",
+      "latitude": 40.5014,
+      "longitude": -74.4474,
+      "radius": 150.0,
+      "areaCode": "CASC"
+    },
+    {
+      "name": "Livingston Student Center",
+      "latitude": 40.5243,
+      "longitude": -74.4370,
+      "radius": 150.0,
+      "areaCode": "LSC"
+    },
+    {
+      "name": "Busch Student Center",
+      "latitude": 40.5230,
+      "longitude": -74.4573,
+      "radius": 150.0,
+      "areaCode": "BSC"
+    },
+    {
+      "name": "Cook Student Center",
+      "latitude": 40.4807,
+      "longitude": -74.4366,
+      "radius": 150.0,
+      "areaCode": "CSC"
+    }
+  ]
+} 

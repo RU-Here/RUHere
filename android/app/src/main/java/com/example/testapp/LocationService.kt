@@ -71,7 +71,7 @@ class LocationService : Service() {
     }
 
     private fun stop() {
-        stopForeground(true)
+        stopForeground(Service.STOP_FOREGROUND_REMOVE)
         stopSelf()
         println("stop function works")
     }
