@@ -85,4 +85,31 @@ struct DetailRow: View {
                 .foregroundColor(.primary)
         }
     }
+}
+
+#Preview("FloatingStatusCard - With Location") {
+    FloatingStatusCard(currentGeofence: "CASC")
+        .background(Color.gray.opacity(0.1))
+}
+
+#Preview("FloatingStatusCard - No Location") {
+    FloatingStatusCard(currentGeofence: nil)
+        .background(Color.gray.opacity(0.1))
+}
+
+#Preview("DetailRow") {
+    VStack(spacing: 12) {
+        DetailRow(title: "Latitude", value: "40.501400")
+        DetailRow(title: "Longitude", value: "-74.447400")
+        DetailRow(title: "Radius", value: "150 meters")
+        DetailRow(title: "Status", value: "Active")
+    }
+    .padding()
+    .background(
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color(.systemBackground))
+            .shadow(radius: 2)
+    )
+    .padding()
+    .background(Color.gray.opacity(0.1))
 } 

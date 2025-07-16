@@ -47,4 +47,14 @@ struct RegionDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
     }
+}
+
+#Preview("RegionDetailView") {
+    let sampleRegion = CLCircularRegion(
+        center: CLLocationCoordinate2D(latitude: 40.5014, longitude: -74.4474),
+        radius: 150.0,
+        identifier: "CASC"
+    )
+    
+    return RegionDetailView(region: sampleRegion)
 } 

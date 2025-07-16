@@ -425,30 +425,115 @@ struct PersonAnnotationCalculator {
             }
         }
         
-        // Group people by their group
-        let peopleByGroup = Dictionary(grouping: allPeopleInGeofence) { $0.1.id }
+        // Create individual annotations for each person
+        guard let region = monitoredRegions.first(where: { $0.identifier == currentUserGeofence }) else {
+            return []
+        }
         
-        // Create annotations for each group that has people in the current geofence
-        let sortedGroupIds = Array(peopleByGroup.keys).sorted()
-        return sortedGroupIds.enumerated().compactMap { (index, groupId) -> PersonAnnotation? in
-            guard let peopleWithGroups = peopleByGroup[groupId] else { return nil }
+        return allPeopleInGeofence.enumerated().compactMap { (index, personWithGroup) -> PersonAnnotation? in
+            let (person, group) = personWithGroup
             
-            let people = peopleWithGroups.map { $0.0 }
-            let group = peopleWithGroups.first?.1
+            let scatteredCoordinate = MapUtilities.calculateScatteredPosition(
+                centerCoordinate: region.center,
+                radius: region.radius,
+                groupIndex: index,
+                totalGroups: allPeopleInGeofence.count
+            )
             
-            if let region = monitoredRegions.first(where: { $0.identifier == currentUserGeofence }) {
-                let scatteredCoordinate = MapUtilities.calculateScatteredPosition(
-                    centerCoordinate: region.center,
-                    radius: region.radius,
-                    groupIndex: index,
-                    totalGroups: sortedGroupIds.count
-                )
-                
-                return PersonAnnotation(person: people[0], coordinate: scatteredCoordinate, allPeople: people, group: group)
-            }
-            return nil
+            return PersonAnnotation(person: person, coordinate: scatteredCoordinate, allPeople: [person], group: group)
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("GeofenceView - Normal State") {
+    GeofenceView()
+}
+
+#Preview("GeofenceAnnotationView - Current Location") {
+    let annotation = GeofenceAnnotation(
+        coordinate: CLLocationCoordinate2D(latitude: 40.5014, longitude: -74.4474),
+        radius: 150.0,
+        identifier: "CASC"
+    )
+    
+    return GeofenceAnnotationView(
+        annotation: annotation,
+        isCurrentGeofence: true,
+        action: {}
+    )
+    .padding()
+    .background(Color.gray.opacity(0.1))
+}
+
+#Preview("GeofenceAnnotationView - Other Location") {
+    let annotation = GeofenceAnnotation(
+        coordinate: CLLocationCoordinate2D(latitude: 40.5243, longitude: -74.4370),
+        radius: 150.0,
+        identifier: "LSC"
+    )
+    
+    return GeofenceAnnotationView(
+        annotation: annotation,
+        isCurrentGeofence: false,
+        action: {}
+    )
+    .padding()
+    .background(Color.gray.opacity(0.1))
+}
+
+#Preview("LocationPermissionView") {
+    // Create a mock geofence manager for preview
+    let mockGeofenceManager = GeofenceManager()
+    
+    return LocationPermissionView(geofenceManager: mockGeofenceManager)
+}
+
+#Preview("LocationDeniedView") {
+    LocationDeniedView()
+}
+
+#Preview("Multiple Geofence Annotations") {
+    let annotations = [
+        GeofenceAnnotation(
+            coordinate: CLLocationCoordinate2D(latitude: 40.5014, longitude: -74.4474),
+            radius: 150.0,
+            identifier: "CASC"
+        ),
+        GeofenceAnnotation(
+            coordinate: CLLocationCoordinate2D(latitude: 40.5243, longitude: -74.4370),
+            radius: 150.0,
+            identifier: "LSC"
+        ),
+        GeofenceAnnotation(
+            coordinate: CLLocationCoordinate2D(latitude: 40.5230, longitude: -74.4573),
+            radius: 150.0,
+            identifier: "BSC"
+        )
+    ]
+    
+    return HStack(spacing: 20) {
+        GeofenceAnnotationView(
+            annotation: annotations[0],
+            isCurrentGeofence: true,
+            action: {}
+        )
+        
+        GeofenceAnnotationView(
+            annotation: annotations[1],
+            isCurrentGeofence: false,
+            action: {}
+        )
+        
+        GeofenceAnnotationView(
+            annotation: annotations[2],
+            isCurrentGeofence: false,
+            action: {}
+        )
+    }
+    .padding()
+    .background(Color.gray.opacity(0.1))
 }
 
 
