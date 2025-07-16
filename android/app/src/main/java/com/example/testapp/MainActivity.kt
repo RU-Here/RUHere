@@ -20,6 +20,7 @@ import com.example.testapp.ui.theme.TestAppTheme
 class MainActivity : ComponentActivity() {
     
     private var hasLocationPermissions by mutableStateOf(false)
+    private val database = Database()
     
     // Location permission launcher
     private val locationPermissionLauncher = registerForActivityResult(
@@ -70,6 +71,7 @@ class MainActivity : ComponentActivity() {
                         onRequestPermissions = { checkAndRequestPermissions() }
                     )
                 }
+                database.printAllUsers()
             }
         }
     }
