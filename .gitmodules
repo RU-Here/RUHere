@@ -1,12 +1,16 @@
 [submodule "ios/locations"]
 	path = ios/locations
 	url = https://github.com/RU-Here/RUHereLocations.git
+	branch = main
 [submodule "geofencing-api/locations"]
 	path = geofencing-api/locations
 	url = https://github.com/RU-Here/RUHereLocations.git
+	branch = main
 [submodule "android/RUHereLocations"]
 	path = android/RUHereLocations
 	url = https://github.com/RU-Here/RUHereLocations.git
+	branch = main
 [submodule "android/app/src/main/assets/RUHereLocations"]
 	path = android/app/src/main/assets/RUHereLocations
 	url = https://github.com/RU-Here/RUHereLocations.git
+	branch = main
