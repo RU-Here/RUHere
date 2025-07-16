@@ -158,7 +158,7 @@ struct GeofenceView: View {
             }
             
             ForEach(personAnnotations) { annotation in
-                Annotation(annotation.person.name, coordinate: annotation.coordinate) {
+                Annotation("", coordinate: annotation.coordinate) {
                     ModernPersonAnnotation(annotation: annotation)
                 }
             }
