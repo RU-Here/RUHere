@@ -1,5 +1,7 @@
 package com.example.testapp
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
@@ -22,9 +24,22 @@ class Database {
         println("all users")
         users.get()
             .addOnSuccessListener { result ->
-                for (document in result) {
-                    println(document.id)
-                }
+                println()
+            }
+    }
+
+    fun addUser(userName: String, userArea: String){
+        val userInfo = hashMapOf(
+            "name" to userName,
+            "areacode" to userArea
+        )
+
+        users.add(userInfo)
+            .addOnSuccessListener { documentRef ->
+                Log.d(TAG, "DocumentSnapshot added with ID: ${documentRef.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error adding document", e)
             }
     }
 }

@@ -4,3 +4,6 @@
 [submodule "geofencing-api/locations"]
 	path = geofencing-api/locations
 	url = https://github.com/RU-Here/RUHereLocations.git
+[submodule "android/RUHereLocations"]
+	path = android/RUHereLocations
+	url = https://github.com/RU-Here/RUHereLocations.git
