@@ -7,3 +7,6 @@
 [submodule "android/RUHereLocations"]
 	path = android/RUHereLocations
 	url = https://github.com/RU-Here/RUHereLocations.git
+[submodule "android/app/src/main/assets/RUHereLocations"]
+	path = android/app/src/main/assets/RUHereLocations
+	url = https://github.com/RU-Here/RUHereLocations.git
