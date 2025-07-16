@@ -79,7 +79,7 @@ struct GeofenceView: View {
             }
             .sheet(isPresented: $showingRegionDetail) {
                 if let region = selectedRegion {
-                    RegionDetailView(region: region)
+                    RegionDetailView(region: region, groups: groups)
                 }
             }
             .sheet(isPresented: $showingCreateGroup) {
