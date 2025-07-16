@@ -135,10 +135,10 @@ fun GeofenceView() {
         )
         
         // Status Card
-        GeofenceInfoCard(
-            geofenceManager = geofenceManager,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+//        GeofenceInfoCard(
+//            geofenceManager = geofenceManager,
+//            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+//        )
         
         // Debug buttons
         Row(
@@ -183,21 +183,13 @@ fun GeofenceView() {
                 Text("Center on Rutgers")
             }
         }
-        
-        // Group Selection
-        GroupSelectionRow(
-            groups = groups,
-            selectedGroup = selectedGroup,
-            onGroupSelected = { selectedGroup = it },
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-        
+
         // Map View
         Card(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(30.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             GeofenceMapView(
@@ -206,6 +198,14 @@ fun GeofenceView() {
                 modifier = Modifier.fillMaxSize()
             )
         }
+
+        // Group Selection
+        GroupSelectionRow(
+            groups = groups,
+            selectedGroup = selectedGroup,
+            onGroupSelected = { selectedGroup = it },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
     }
 }
 
@@ -216,12 +216,15 @@ fun GroupSelectionRow(
     onGroupSelected: (UserGroup?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.Bottom
+    ) {
         Text(
             text = "Select a Group",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
         )
         
         LazyRow(
@@ -271,7 +274,8 @@ fun GroupCard(
     Card(
         modifier = modifier
             .size(120.dp)
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .fillMaxHeight(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(

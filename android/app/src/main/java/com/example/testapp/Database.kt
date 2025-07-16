@@ -24,7 +24,9 @@ class Database {
         println("all users")
         users.get()
             .addOnSuccessListener { result ->
-                println()
+                for (document in result) {
+                    Log.d(TAG, "${document.id} => ${document.data}")
+                }
             }
     }
 

@@ -110,7 +110,7 @@ class GeofenceManager(application: Application) : AndroidViewModel(application) 
         println("Loading geofences...")
         viewModelScope.launch {
             try {
-                val json = context.assets.open("locations.json").bufferedReader().use { it.readText() }
+                val json = context.assets.open("RUHereLocations/Locations.json").bufferedReader().use { it.readText() }
                 val locationData = Gson().fromJson(json, LocationData::class.java)
                 
                 // Remove existing geofences

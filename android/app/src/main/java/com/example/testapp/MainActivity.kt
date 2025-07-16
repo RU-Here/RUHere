@@ -71,7 +71,6 @@ class MainActivity : ComponentActivity() {
                         onRequestPermissions = { checkAndRequestPermissions() }
                     )
                 }
-                database.printAllUsers()
             }
         }
     }
