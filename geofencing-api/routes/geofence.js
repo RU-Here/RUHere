@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../firebase/admin');
+const {FieldValue} = require('firebase-admin/firestore'); // FieldValue is not attached to admin, lives in /firestore
 
 // Endpoint: Create group
 router.post('/addGroup', async (req, res) => {
-  const { groupId, name, people } = req.body;
+  const { name } = req.body;
 
   try {
-    await db.collection('Groups').doc(groupId).set({
-      name,
-      people
+    await db.collection('Groups').add({
+      name: name
     });
 
     res.status(200).send({ message: 'Group created.'});
@@ -31,8 +31,30 @@ router.post('/deleteGroup', async (req, res) => {
   }
 });
 
+// Endpoint: User added to group
+router.post('/addUsertoGroup', async (req, res) => {
+  const { groupId, userId } = req.body;
+
+  if (!groupId || !userId) {
+    return res.status(400).send({ error: 'groupId and userId are both required' });
+  }
+
+  const groupRef = db.collection('Groups').doc(groupId);
+  const userRef = db.collection('Users').doc(userId);
+
+  try {
+    await groupRef.update({
+      people: FieldValue.arrayUnion(userRef)
+    });
+    
+    res.status(200).send({message: `User ${userId} added to group ${groupId}`});
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 // Endpoint: User created
-router.post('/addUser', async (req, res) => {
+router.post('/createUser', async (req, res) => {
   const { areacode, name } = req.body;
 
   try {
