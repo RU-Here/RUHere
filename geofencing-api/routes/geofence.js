@@ -5,11 +5,13 @@ const {FieldValue} = require('firebase-admin/firestore'); // FieldValue is not a
 
 // Endpoint: Create group
 router.post('/addGroup', async (req, res) => {
-  const { name } = req.body;
+  const { name, emoji, admin } = req.body;
 
   try {
     await db.collection('Groups').add({
-      name: name
+      name: name,
+      emoji: emoji,
+      admin: admin
     });
 
     res.status(200).send({ message: 'Group created.'});
@@ -171,7 +173,7 @@ router.get('/nearby', async (req, res) => {
 
 // Endpoint: Get all groups by user
 router.get('/allGroups/:userId', async (req, res) => {
-  const { userId } = req.params.userId;
+  const userId = req.params.userId;
 
   try {
     const userRef = db.collection('Users').doc(userId);
@@ -188,11 +190,11 @@ router.get('/allGroups/:userId', async (req, res) => {
       const peopleData = await Promise.all(
         personRefs.map(async (ref) => {
           const personObject = await ref.get();
-            return { personId: personObject.id, ...personObject.data() }
+            return { id: personObject.id, ...personObject.data() }
         })
       )
       
-      groupData.push({ groupId: doc.id, ...doc.data(), people: peopleData });
+      groupData.push({ id: doc.id, ...doc.data(), people: peopleData });
 
     }
     console.log(groupData);
