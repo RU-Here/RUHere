@@ -135,8 +135,8 @@ router.post('/exit', async (req, res) => {
 });
 
 // Endpoint: Get users in a location
-router.get('/nearby', async (req, res) => {
-  const { areacode } = req.body;
+router.get('/nearby/:areacode', async (req, res) => {
+  const areacode  = req.params.areacode;
 
   try {
     const snapshot = await db.collection('Users')
@@ -207,8 +207,9 @@ router.get('/allGroups/:userId', async (req, res) => {
 });
 
 // Endpoint: Leave group
-router.get('/leaveGroup', async (req, res) => {
-  const { userId, groupId } = req.body;
+router.get('/leaveGroup/:userId/:groupId', async (req, res) => {
+  const userId = req.params.userId;
+  const groupId = req.params.groupId;
 
   try {
     const groupRef = await db.collection('Groups').doc(groupId);
