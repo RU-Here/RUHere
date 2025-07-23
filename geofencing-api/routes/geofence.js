@@ -170,8 +170,8 @@ router.get('/nearby', async (req, res) => {
 // });
 
 // Endpoint: Get all groups by user
-router.get('/allGroups', async (req, res) => {
-  const { userId } = req.body;
+router.get('/allGroups/:userId', async (req, res) => {
+  const { userId } = req.params.userId;
 
   try {
     const userRef = db.collection('Users').doc(userId);
@@ -203,6 +203,18 @@ router.get('/allGroups', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+// Endpoint: Leave group
+router.get('/leaveGroup', async (req, res) => {
+  const { userId, groupId } = req.body;
+
+  try {
+    const groupRef = await db.collection('Groups').doc(groupId);
+    await groupRef.people.update()
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+})
 
 // Endpoint: Get all groups
 // router.get('/allGroups', async (req, res) => {
