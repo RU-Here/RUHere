@@ -55,12 +55,13 @@ router.post('/addUsertoGroup', async (req, res) => {
 
 // Endpoint: User created
 router.post('/createUser', async (req, res) => {
-  const { areacode, name, userId } = req.body;
+  const { userId, areacode, name, pfp } = req.body;
 
   try {
     await db.collection('Users').doc(userId).add({
       areacode: null,
-      name: name
+      name: name,
+      pfp: pfp
     });
 
     res.status(200).send({ message: 'User created.'});
@@ -102,13 +103,11 @@ router.post('/changeName', async (req, res) => {
 
 // Endpoint: User enters a geofence
 router.post('/enter', async (req, res) => {
-  const { userId, locationId, coordinates } = req.body;
+  const { userId, areacode } = req.body;
 
   try {
-    await db.collection('user_locations').doc(userId).set({
-      locationId,
-      coordinates,
-      timestamp: Date.now()
+    await db.collection('Users').doc(userId).update({
+      areacode: areacode
     });
 
     // If there are other users in the area, send notification to user of those people
@@ -126,7 +125,7 @@ router.post('/exit', async (req, res) => {
 
   try {
     const userRef = await db.collection('Users').doc(userId);
-    await userRef.update({locationId: null});
+    await userRef.update({areacode: null});
     res.status(200).send({ message: 'Exit geofence logged.' });
   } catch (error) {
     res.status(500).send({ error: error.message });
@@ -135,11 +134,11 @@ router.post('/exit', async (req, res) => {
 
 // Endpoint: Get users in a location
 router.get('/nearby', async (req, res) => {
-  const { locationId } = req.body;
+  const { areacode } = req.body;
 
   try {
     const snapshot = await db.collection('Users')
-      .where('areacode', '==', locationId)
+      .where('areacode', '==', areacode)
       .get();
 
     const users = [];
