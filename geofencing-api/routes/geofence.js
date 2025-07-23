@@ -55,11 +55,11 @@ router.post('/addUsertoGroup', async (req, res) => {
 
 // Endpoint: User created
 router.post('/createUser', async (req, res) => {
-  const { areacode, name } = req.body;
+  const { areacode, name, userId } = req.body;
 
   try {
-    await db.collection('Users').add({
-      areacode: areacode,
+    await db.collection('Users').doc(userId).add({
+      areacode: null,
       name: name
     });
 
@@ -71,19 +71,14 @@ router.post('/createUser', async (req, res) => {
 });
 
 // Endpoint: User deleted
-router.post('/deleteUser/:name', async (req, res) => {
-  const name = req.params.name;
+router.post('/deleteUser', async (req, res) => {
+  const { userId }= req.body;
 
   try {
-    const snapshot = await db.collection('Users')
-      .where('name', '==', name)
-      .get();
-
-    const users = [];
-    snapshot.forEach(doc => {
-      users.push({ userId: doc.id, ...doc.data() });
-      db.collection('Users').doc(doc.id).delete();
-    });
+    // const snapshot = await db.collection('Users')
+    //   .where('name', '==', name)
+    //   .get();
+    db.collection('Users').doc(userId).delete();
 
 
     res.status(200).send({message: 'User deleted'});
@@ -130,7 +125,8 @@ router.post('/exit', async (req, res) => {
   const { userId } = req.body;
 
   try {
-    await db.collection('user_locations').doc(userId).delete();
+    const userRef = await db.collection('Users').doc(userId);
+    await userRef.update({locationId: null});
     res.status(200).send({ message: 'Exit geofence logged.' });
   } catch (error) {
     res.status(500).send({ error: error.message });
@@ -138,8 +134,8 @@ router.post('/exit', async (req, res) => {
 });
 
 // Endpoint: Get users in a location
-router.get('/nearby/:locationId', async (req, res) => {
-  const locationId = req.params.locationId;
+router.get('/nearby', async (req, res) => {
+  const { locationId } = req.body;
 
   try {
     const snapshot = await db.collection('Users')
@@ -158,25 +154,25 @@ router.get('/nearby/:locationId', async (req, res) => {
 });
 
 // Endpoint: Get all users
-router.get('/allUsers', async (req, res) => {
-  try {
-    const snapshot = await db.collection('Users').get();
+// router.get('/allUsers', async (req, res) => {
+//   try {
+//     const snapshot = await db.collection('Users').get();
 
-    const users = [];
-    snapshot.forEach(doc => {
-      users.push({userId: doc.id, ...doc.data()});
-    })
+//     const users = [];
+//     snapshot.forEach(doc => {
+//       users.push({userId: doc.id, ...doc.data()});
+//     })
     
-    res.status(200).send(users);
-  } catch (error) {
-    res.status(500).send({error: error.message});
-  }
+//     res.status(200).send(users);
+//   } catch (error) {
+//     res.status(500).send({error: error.message});
+//   }
   
-});
+// });
 
 // Endpoint: Get all groups by user
-router.get('/allGroups/:userId', async (req, res) => {
-  const userId = req.params.userId;
+router.get('/allGroups', async (req, res) => {
+  const { userId } = req.body;
 
   try {
     const userRef = db.collection('Users').doc(userId);
