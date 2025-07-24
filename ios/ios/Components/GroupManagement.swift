@@ -5,6 +5,8 @@ struct ModernGroupsSection: View {
     @Binding var selectedGroup: UserGroup?
     let currentGeofence: String?
     @Binding var showingCreateGroup: Bool
+    let isLoading: Bool
+    let errorMessage: String?
     
     var body: some View {
         VStack(spacing: 16) {
@@ -17,29 +19,55 @@ struct ModernGroupsSection: View {
             }
             .padding(.horizontal, 20)
             
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
-                    ForEach(groups) { group in
-                        ModernGroupCard(
-                            group: group,
-                            isSelected: selectedGroup?.id == group.id,
-                            currentGeofence: currentGeofence
-                        ) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                                selectedGroup = selectedGroup?.id == group.id ? nil : group
-                            }
-                        }
-                        .padding(.vertical, 10) // Extra space for scaling and shadow
-                    }
-                    
-                    // Add New Group Button
-                    ModernAddGroupCard {
-                        showingCreateGroup = true
-                    }
-                    .padding(.vertical, 10) // Consistent spacing
+            if isLoading {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading groups...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
+                .frame(height: 120)
                 .padding(.horizontal, 20)
-                .padding(.vertical, 5) // Additional space for shadows
+            } else if let errorMessage = errorMessage {
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.title2)
+                        .foregroundColor(.orange)
+                    Text("Error loading groups")
+                        .font(.headline)
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(height: 120)
+                .padding(.horizontal, 20)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(groups) { group in
+                            ModernGroupCard(
+                                group: group,
+                                isSelected: selectedGroup?.id == group.id,
+                                currentGeofence: currentGeofence
+                            ) {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                    selectedGroup = selectedGroup?.id == group.id ? nil : group
+                                }
+                            }
+                            .padding(.vertical, 10) // Extra space for scaling and shadow
+                        }
+                        
+                        // Add New Group Button
+                        ModernAddGroupCard {
+                            showingCreateGroup = true
+                        }
+                        .padding(.vertical, 10) // Consistent spacing
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 5) // Additional space for shadows
+                }
             }
         }
         .padding(.vertical, 20)
@@ -157,6 +185,10 @@ struct CreateGroupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var groupName = ""
     @State private var selectedEmoji = "🏠"
+    @State private var isCreating = false
+    
+    let groupService: GroupService
+    let authService: AuthenticationService
 
     
     private let availableEmojis = [
@@ -247,14 +279,22 @@ struct CreateGroupView: View {
                 // Action Buttons
                 VStack(spacing: 12) {
                     Button(action: createGroup) {
-                        let isDisabled = groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        let isDisabled = groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isCreating
                         let buttonOpacity = isDisabled ? 0.6 : 1.0
                         
                         HStack {
-                            Text("Create Group")
-                                .fontWeight(.semibold)
-                            
-                            Image(systemName: "arrow.right")
+                            if isCreating {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                                Text("Creating...")
+                                    .fontWeight(.semibold)
+                            } else {
+                                Text("Create Group")
+                                    .fontWeight(.semibold)
+                                
+                                Image(systemName: "arrow.right")
+                            }
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -269,7 +309,7 @@ struct CreateGroupView: View {
                         .cornerRadius(12)
                         .opacity(buttonOpacity)
                     }
-                    .disabled(groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isCreating)
                     
                     Button(action: {
                         dismiss()
@@ -289,14 +329,41 @@ struct CreateGroupView: View {
     
     private func createGroup() {
         let trimmedName = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedName.isEmpty {
-            // TODO: Save the group (name: trimmedName, emoji: selectedEmoji, people: [])
-            print("Creating group: \(trimmedName) \(selectedEmoji)")
-            
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
-            
-            dismiss()
+        guard !trimmedName.isEmpty, !isCreating else { return }
+        
+        guard let userId = getUserId() else {
+            print("No user ID available")
+            return
         }
+        
+        isCreating = true
+        
+        Task {
+            let success = await groupService.createGroup(
+                name: trimmedName,
+                emoji: selectedEmoji,
+                adminUserId: userId
+            )
+            
+            DispatchQueue.main.async {
+                self.isCreating = false
+                
+                if success {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
+                    self.dismiss()
+                }
+                // Error handling is done in the GroupService
+            }
+        }
+    }
+    
+    private func getUserId() -> String? {
+        if let user = authService.user {
+            return user.uid
+        } else if authService.isGuestMode {
+            return "guest_user"
+        }
+        return nil
     }
 } 

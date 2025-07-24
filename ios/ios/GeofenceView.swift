@@ -4,6 +4,8 @@ import MapKit
 
 struct GeofenceView: View {
     @StateObject private var geofenceManager = GeofenceManager()
+    @StateObject private var groupService = GroupService()
+    @EnvironmentObject var authService: AuthenticationService
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var selectedRegion: CLCircularRegion?
     @State private var showingRegionDetail = false
@@ -11,26 +13,6 @@ struct GeofenceView: View {
     @State private var showingCreateGroup = false
     @State private var showingProfile = false
     @State private var hasPerformedInitialZoom = false
-    @State private var groups: [UserGroup] = [
-        UserGroup(id: "1", name: "Abusement Park", people: [
-            Person(id: "1", name: "Dev", areaCode: "CASC"),
-            Person(id: "2", name: "Joshua", areaCode: "LSC"),
-            Person(id: "3", name: "Alan", areaCode: "BSC"),
-            Person(id: "4", name: "Dev", areaCode: "CASC"),
-            Person(id: "5", name: "Joshua", areaCode: "LSC"),
-            Person(id: "6", name: "Alan", areaCode: "BSC")
-        ], emoji: "🎢"),
-        UserGroup(id: "2", name: "Band", people: [
-            Person(id: "4", name: "Ezra", areaCode: "CASC"),
-            Person(id: "5", name: "Alicia", areaCode: "CASC"),
-            Person(id: "6", name: "Hana", areaCode: "LSC")
-        ], emoji: "🎵"),
-        UserGroup(id: "3", name: "RuHere Dev", people: [
-            Person(id: "7", name: "Jash", areaCode: "BSC"),
-            Person(id: "8", name: "Matt", areaCode: "CASC"),
-            Person(id: "9", name: "Adi", areaCode: "LSC")
-        ], emoji: "💻")
-    ]
     
     // MARK: - Computed Properties
     
@@ -48,7 +30,7 @@ struct GeofenceView: View {
         PersonAnnotationCalculator.calculatePersonAnnotations(
             currentUserGeofence: geofenceManager.currentUserGeofence,
             selectedGroup: selectedGroup,
-            groups: groups,
+            groups: groupService.groups,
             monitoredRegions: geofenceManager.monitoredRegions
         )
     }
@@ -83,7 +65,17 @@ struct GeofenceView: View {
                 }
             }
             .sheet(isPresented: $showingCreateGroup) {
-                CreateGroupView()
+                CreateGroupView(groupService: groupService, authService: authService)
+            }
+            .task {
+                if let userId = getUserId() {
+                    await groupService.fetchGroups(for: userId)
+                }
+            }
+            .refreshable {
+                if let userId = getUserId() {
+                    await groupService.fetchGroups(for: userId)
+                }
             }
             .sheet(isPresented: $showingProfile) {
                 ProfileView()
@@ -122,10 +114,12 @@ struct GeofenceView: View {
                 Spacer(minLength: 0)
                 
                 ModernGroupsSection(
-                    groups: groups,
+                    groups: groupService.groups,
                     selectedGroup: $selectedGroup,
                     currentGeofence: geofenceManager.currentUserGeofence,
-                    showingCreateGroup: $showingCreateGroup
+                    showingCreateGroup: $showingCreateGroup,
+                    isLoading: groupService.isLoading,
+                    errorMessage: groupService.errorMessage
                 )
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -224,6 +218,18 @@ struct GeofenceView: View {
         withAnimation(.easeInOut(duration: 1.5)) {
             cameraPosition = .region(MapUtilities.calculateRegionForGeofence(currentRegion))
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func getUserId() -> String? {
+        if let user = authService.user {
+            return user.uid
+        } else if authService.isGuestMode {
+            // For guest mode, use a default guest ID or generate a unique one
+            return "guest_user"
+        }
+        return nil
     }
 }
     
