@@ -49,6 +49,8 @@ class GeofenceManager(application: Application) : AndroidViewModel(application) 
     val isLocationEnabled: StateFlow<Boolean> = _isLocationEnabled.asStateFlow()
     
     private var locationCallback: LocationCallback? = null
+
+    private var currentGeofence: String? = null
     
     init {
         println("GeofenceManager initialized")
@@ -306,6 +308,27 @@ class GeofenceManager(application: Application) : AndroidViewModel(application) 
             _currentUserGeofence.value = foundGeofence
             println("User is now in geofence: ${foundGeofence ?: "none"}")
         }
+    }
+
+    //helper function
+    //returns area code of current geofence is one does not exist
+    private fun getCurrentGeofence(location: LatLng): String? {
+        if (currentGeofence != null) return currentGeofence
+
+        for (region in _monitoredRegions.value) {
+            val distance = calculateDistance(location, region.center)
+            if (distance <= region.radius) {
+                currentGeofence = region.id
+                return region.id
+            }
+        }
+
+        return null
+    }
+
+    public fun getCurrentGeofence(): String? {
+        if (currentLocation.value == null) return null
+        return getCurrentGeofence(currentLocation.value!!)
     }
     
     private fun calculateDistance(point1: LatLng, point2: LatLng): Double {

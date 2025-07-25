@@ -65,6 +65,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation(libs.play.services.maps)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

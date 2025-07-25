@@ -12,11 +12,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +46,7 @@ fun GeofenceView() {
     // Observe permission state and trigger location services when available
     val hasLocationPermission by geofenceManager.hasLocationPermission.collectAsState()
     val currentLocation by geofenceManager.currentLocation.collectAsState()
+    val currentGeofence by geofenceManager.currentUserGeofence.collectAsState()
     
     // Trigger location services when permissions are granted
     LaunchedEffect(Unit) {
@@ -119,19 +122,31 @@ fun GeofenceView() {
             .background(Color(0xFFF5F5F5))
     ) {
         // Top App Bar
-        TopAppBar(
+        CenterAlignedTopAppBar(
             title = {
                 Text(
                     text = "RUHere",
-                    style = MaterialTheme.typography.headlineMedium.copy(
+                    style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
-                    )
+                    ),
+                    textAlign = TextAlign.Center
                 )
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 titleContentColor = MaterialTheme.colorScheme.onPrimary
-            )
+            ),
+            navigationIcon = {
+                SmallFloatingActionButton(
+                    onClick = {},
+                    shape = CircleShape
+                    ) {
+                    Icon(
+                        imageVector = Icons.Filled.PersonOutline,
+                        contentDescription = "profile icon"
+                    )
+                }
+            }
         )
         
         // Status Card
@@ -141,71 +156,101 @@ fun GeofenceView() {
 //        )
         
         // Debug buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Button(
-                onClick = { geofenceManager.forceStartLocationUpdates() },
-                modifier = Modifier.weight(1f).padding(end = 4.dp)
-            ) {
-                Text("Start Location")
-            }
-            
-            Button(
-                onClick = { geofenceManager.setMockLocation() },
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-            ) {
-                Text("Mock Location")
-            }
-            
-            Button(
-                onClick = { geofenceManager.loadGeofences() },
-                modifier = Modifier.weight(1f).padding(start = 4.dp)
-            ) {
-                Text("Load Geofences")
-            }
-        }
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 16.dp, vertical = 8.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            Button(
+//                onClick = { geofenceManager.forceStartLocationUpdates() },
+//                modifier = Modifier.weight(1f).padding(end = 4.dp)
+//            ) {
+//                Text("Start Location")
+//            }
+//
+//            Button(
+//                onClick = { geofenceManager.setMockLocation() },
+//                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+//            ) {
+//                Text("Mock Location")
+//            }
+//
+//            Button(
+//                onClick = { geofenceManager.loadGeofences() },
+//                modifier = Modifier.weight(1f).padding(start = 4.dp)
+//            ) {
+//                Text("Load Geofences")
+//            }
+//        }
         
         // Additional debug buttons
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 16.dp, vertical = 8.dp),
+//            horizontalArrangement = Arrangement.Center
+//        ) {
+//            Button(
+//                onClick = { geofenceManager.centerOnRutgers() },
+//                modifier = Modifier.padding(horizontal = 8.dp)
+//            ) {
+//                Text("Center on Rutgers")
+//            }
+//        }
+
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Button(
-                onClick = { geofenceManager.centerOnRutgers() },
-                modifier = Modifier.padding(horizontal = 8.dp)
-            ) {
-                Text("Center on Rutgers")
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+        ){
+            if (currentGeofence == null) {
+                Text(
+                    text = "Current Geofence: none",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
+            else {
+                Text(
+                    text = "Current Geofence: $currentGeofence",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
         }
 
         // Map View
         Card(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            shape = RoundedCornerShape(30.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                .fillMaxHeight(0.77f),
+            //elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = RectangleShape
         ) {
             GeofenceMapView(
                 geofenceManager = geofenceManager,
                 selectedGroup = selectedGroup,
-                modifier = Modifier.fillMaxSize()
+                //modifier = Modifier.fillMaxSize()
             )
         }
 
         // Group Selection
-        GroupSelectionRow(
-            groups = groups,
-            selectedGroup = selectedGroup,
-            onGroupSelected = { selectedGroup = it },
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(bottom = 30.dp),
+            verticalAlignment = Alignment.Bottom
+        ){
+            GroupSelectionRow(
+                groups = groups,
+                selectedGroup = selectedGroup,
+                onGroupSelected = { selectedGroup = it },
+                modifier = Modifier
+                    .padding(bottom = 50.dp)
+                    .fillMaxHeight()
+            )
+        }
+
     }
 }
 
@@ -217,7 +262,6 @@ fun GroupSelectionRow(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.Bottom
     ) {
         Text(
