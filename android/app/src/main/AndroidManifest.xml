@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"
+    <uses-permission
+        android:name="android.permission.INTERNET"
         tools:ignore="ExtraText" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -12,7 +13,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name="LocationApp"
+        android:name=".LocationApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -22,17 +23,24 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TestApp"
         tools:targetApi="31">
-        
-        <!-- Google Maps API Key -->
+        <activity
+            android:name=".MainActivity2"
+            android:exported="false" />
+        <activity
+            android:name=".Login"
+            android:exported="false"
+            android:theme="@style/Theme.TestApp" /> <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyC4BgARdLtsC2EVUv_kOu7JQk4u6X3tu-E" />
-            
-        <service android:name=".LocationService" android:foregroundServiceType="location" />
-        
-        <!-- Geofence Broadcast Receiver -->
-        <receiver android:name=".GeofenceBroadcastReceiver" android:exported="false" />
-        
+
+        <service
+            android:name=".LocationService"
+            android:foregroundServiceType="location" /> <!-- Geofence Broadcast Receiver -->
+        <receiver
+            android:name=".GeofenceBroadcastReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

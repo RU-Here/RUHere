@@ -1,6 +1,7 @@
 package com.example.testapp
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -127,6 +128,11 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    fun startLogin(){
+        val myIntent = Intent(applicationContext, Login::class.java)
+        startActivity(myIntent)
     }
 }
 
