@@ -231,7 +231,8 @@ struct JoinGroupView: View {
 }
 
 #Preview {
-    JoinGroupView(groupId: "sample-group-id")
-        .environmentObject(AuthenticationService())
-        .environmentObject(GroupService())
+    let authService = AuthenticationService()
+    return JoinGroupView(groupId: "sample-group-id")
+        .environmentObject(authService)
+        .environmentObject(GroupService(authService: authService))
 }

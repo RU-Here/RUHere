@@ -39,8 +39,9 @@ class DeepLinkHandler: ObservableObject {
 @main
 struct iosApp: App {
     @StateObject private var authService = AuthenticationService()
-    @StateObject private var groupService = GroupService()
     @StateObject private var deepLinkHandler = DeepLinkHandler()
+    
+    @State private var groupService: GroupService?
     
     init() {
         // Configure Firebase
@@ -51,7 +52,7 @@ struct iosApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(authService)
-                .environmentObject(groupService)
+                .environmentObject(getOrCreateGroupService())
                 .environmentObject(deepLinkHandler)
                 .onOpenURL { url in
                     print("📱 Received URL: \(url)")
@@ -67,6 +68,17 @@ struct iosApp: App {
                         deepLinkHandler.handleDeepLink(url)
                     }
                 }
+        }
+    }
+    
+    // Helper function to ensure we use the same GroupService instance
+    private func getOrCreateGroupService() -> GroupService {
+        if let existingService = groupService {
+            return existingService
+        } else {
+            let newService = GroupService(authService: authService)
+            groupService = newService
+            return newService
         }
     }
 }

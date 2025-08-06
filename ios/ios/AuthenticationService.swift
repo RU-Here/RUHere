@@ -12,7 +12,6 @@ class AuthenticationService: ObservableObject {
     
     // MARK: - API Configuration
     private let baseURL = "https://ru-here.vercel.app/api/geofence"
-    private let apiKey = ""
     
     init() {
         user = Auth.auth().currentUser
@@ -104,6 +103,16 @@ class AuthenticationService: ObservableObject {
         isGuestMode = false
     }
     
+    // MARK: - ID Token Management
+    
+    func getCurrentUserIdToken() async throws -> String? {
+        guard let currentUser = Auth.auth().currentUser else {
+            return nil
+        }
+        
+        return try await currentUser.getIDToken()
+    }
+    
     // MARK: - Private Helpers
     
     private func callUserSignedInAPI(userId: String, name: String, pfp: String) async {
@@ -115,7 +124,19 @@ class AuthenticationService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        
+        // Get current user's ID token for authorization
+        do {
+            if let idToken = try await getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                print("❌ No ID token available for authentication")
+                return
+            }
+        } catch {
+            print("❌ Failed to get ID token: \(error)")
+            return
+        }
         
         let userData = [
             "userId": userId,

@@ -7,7 +7,11 @@ class GroupService: ObservableObject {
     @Published var errorMessage: String?
     
     private let baseURL = "https://ru-here.vercel.app/api/geofence"
-    private let apiKey = ""
+    private let authService: AuthenticationService
+    
+    init(authService: AuthenticationService) {
+        self.authService = authService
+    }
     
     func fetchGroups(for userId: String) async {
         DispatchQueue.main.async {
@@ -28,7 +32,28 @@ class GroupService: ObservableObject {
         }
         
         var request = URLRequest(url: url)
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-Key")
+        
+        // Get current user's ID token for authorization
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                print("🔑 Using ID Token for authentication: \(idToken.prefix(20))...")
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                print("❌ No ID token available")
+                DispatchQueue.main.async {
+                    self.errorMessage = "Authentication required"
+                    self.isLoading = false
+                }
+                return
+            }
+        } catch {
+            print("❌ Failed to get ID token: \(error)")
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to authenticate: \(error.localizedDescription)"
+                self.isLoading = false
+            }
+            return
+        }
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -42,6 +67,7 @@ class GroupService: ObservableObject {
             }
             
             print("📡 HTTP Status Code: \(httpResponse.statusCode)")
+            print("📡 Response Headers: \(httpResponse.allHeaderFields)")
             
             if httpResponse.statusCode == 200 {
                 // Print raw response for debugging
@@ -54,34 +80,45 @@ class GroupService: ObservableObject {
                 
                 print("✅ Successfully decoded \(apiGroups.count) groups")
                 
+                let mappedGroups = apiGroups.map { apiGroup in
+                    UserGroup(
+                        id: apiGroup.id,
+                        name: apiGroup.name,
+                        people: apiGroup.people.compactMap { apiPerson in
+                            // Only include people who have a name
+                            guard let personName = apiPerson.name, !personName.isEmpty else {
+                                print("⚠️ Skipping person with ID \(apiPerson.id) - missing name")
+                                return nil
+                            }
+                            return Person(
+                                id: apiPerson.id,
+                                name: personName,
+                                areaCode: apiPerson.areaCode ?? "",
+                                photoURL: apiPerson.photoURL ?? ""
+                            )
+                        },
+                        emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
+                    )
+                }
+                
+                print("🔄 About to update UI with \(mappedGroups.count) groups:")
+                for group in mappedGroups {
+                    print("   - \(group.name) (ID: \(group.id)) with \(group.people.count) people")
+                }
+                
                 DispatchQueue.main.async {
-                    self.groups = apiGroups.map { apiGroup in
-                        UserGroup(
-                            id: apiGroup.id,
-                            name: apiGroup.name,
-                            people: apiGroup.people.compactMap { apiPerson in
-                                // Only include people who have a name
-                                guard let personName = apiPerson.name, !personName.isEmpty else {
-                                    print("⚠️ Skipping person with ID \(apiPerson.id) - missing name")
-                                    return nil
-                                }
-                                return Person(
-                                    id: apiPerson.id,
-                                    name: personName,
-                                    areaCode: apiPerson.areaCode ?? "",
-                                    photoURL: apiPerson.photoURL ?? ""
-                                )
-                            },
-                            emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
-                        )
-                    }
+                    self.groups = mappedGroups
                     self.isLoading = false
                     self.errorMessage = nil // Clear any previous errors
                     
+                    print("✅ UI State Updated - groups count: \(self.groups.count)")
                     if self.groups.isEmpty {
-                        print("👤 User is not part of any groups")
+                        print("👤 User is not part of any groups (after UI update)")
                     } else {
                         print("🎉 Groups updated in UI: \(self.groups.count) groups")
+                        for group in self.groups {
+                            print("   UI Group: \(group.name)")
+                        }
                     }
                 }
             } else if httpResponse.statusCode == 404 {
@@ -91,6 +128,16 @@ class GroupService: ObservableObject {
                     self.errorMessage = nil
                     self.isLoading = false
                     print("👤 No groups found for user")
+                }
+            } else if httpResponse.statusCode == 401 {
+                // Authentication error
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("❌ Authentication failed: \(responseString)")
+                }
+                
+                DispatchQueue.main.async {
+                    self.errorMessage = "Authentication failed. Please sign in again."
+                    self.isLoading = false
                 }
             } else if httpResponse.statusCode >= 500 {
                 // Server error
@@ -105,11 +152,11 @@ class GroupService: ObservableObject {
             } else {
                 // Other client errors
                 if let responseString = String(data: data, encoding: .utf8) {
-                    print("❌ Error response body: \(responseString)")
+                    print("❌ Error response body (Status \(httpResponse.statusCode)): \(responseString)")
                 }
                 
                 DispatchQueue.main.async {
-                    self.errorMessage = "Unable to load groups. Please check your connection and try again."
+                    self.errorMessage = "Unable to load groups (Status: \(httpResponse.statusCode)). Please check your connection and try again."
                     self.isLoading = false
                 }
             }
@@ -139,7 +186,23 @@ class GroupService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        // Get current user's ID token for authorization
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Authentication required"
+                }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to authenticate: \(error.localizedDescription)"
+            }
+            return false
+        }
         
         let groupData = [
             "name": name,
@@ -182,7 +245,23 @@ class GroupService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        // Get current user's ID token for authorization
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Authentication required"
+                }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to authenticate: \(error.localizedDescription)"
+            }
+            return false
+        }
         
         let userData = [
             "groupId": groupId,
@@ -236,7 +315,23 @@ class GroupService: ObservableObject {
         }
         
         var request = URLRequest(url: url)
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        // Get current user's ID token for authorization
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Authentication required"
+                }
+                return nil
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.errorMessage = "Failed to authenticate: \(error.localizedDescription)"
+            }
+            return nil
+        }
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
