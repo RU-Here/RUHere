@@ -38,7 +38,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-900">
+    <div className="min-h-screen bg-[#1b1b1b]">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           <div className="bg-zinc-800 rounded-2xl shadow-xl p-8 md:p-12 max-w-2xl mx-auto">
@@ -54,12 +54,12 @@ export default function Home() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
                   required
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#ff4540] focus:border-transparent text-gray-900"
                 />
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-8 py-3 bg-[#ff4540] text-white font-semibold rounded-lg hover:bg-[#b3302d] focus:outline-none focus:ring-2 focus:ring-[#ff4540] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isSubmitting ? "Joining..." : "Join Waitlist"}
                 </button>
