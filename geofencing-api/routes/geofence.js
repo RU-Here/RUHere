@@ -8,13 +8,16 @@ router.post('/addGroup', async (req, res) => {
   const { name, emoji, admin } = req.body;
 
   try {
-    await db.collection('Groups').add({
+    const docRef = await db.collection('Groups').add({
       name: name,
       emoji: emoji,
       admin: admin
     });
 
-    res.status(200).send({ message: 'Group created.'});
+    res.status(200).send({ 
+      message: 'Group created.',
+      groupId: docRef.id
+    });
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
@@ -57,11 +60,11 @@ router.post('/addUsertoGroup', async (req, res) => {
 
 // Endpoint: User created
 router.post('/createUser', async (req, res) => {
-  const { userId, areacode, name, pfp } = req.body;
+  const { userId, name, pfp } = req.body;
 
   try {
     await db.collection('Users').doc(userId).add({
-      areacode: null,
+      areaCode: null,
       name: name,
       pfp: pfp
     });
@@ -78,11 +81,7 @@ router.post('/deleteUser', async (req, res) => {
   const { userId }= req.body;
 
   try {
-    // const snapshot = await db.collection('Users')
-    //   .where('name', '==', name)
-    //   .get();
     db.collection('Users').doc(userId).delete();
-
 
     res.status(200).send({message: 'User deleted'});
   } catch (error) {
@@ -105,11 +104,11 @@ router.post('/changeName', async (req, res) => {
 
 // Endpoint: User enters a geofence
 router.post('/enter', async (req, res) => {
-  const { userId, areacode } = req.body;
+  const { userId, areaCode } = req.body;
 
   try {
     await db.collection('Users').doc(userId).update({
-      areacode: areacode
+      areaCode: areaCode
     });
 
     // If there are other users in the area, send notification to user of those people
@@ -129,26 +128,6 @@ router.post('/exit', async (req, res) => {
     const userRef = await db.collection('Users').doc(userId);
     await userRef.update({areacode: null});
     res.status(200).send({ message: 'Exit geofence logged.' });
-  } catch (error) {
-    res.status(500).send({ error: error.message });
-  }
-});
-
-// Endpoint: Get users in a location
-router.get('/nearby/:areacode', async (req, res) => {
-  const areacode  = req.params.areacode;
-
-  try {
-    const snapshot = await db.collection('Users')
-      .where('areacode', '==', areacode)
-      .get();
-
-    const users = [];
-    snapshot.forEach(doc => {
-      users.push({ userId: doc.id, ...doc.data() });
-    });
-
-    res.status(200).send(users);
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
