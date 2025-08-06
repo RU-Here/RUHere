@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../firebase/admin');
 const {FieldValue} = require('firebase-admin/firestore'); // FieldValue is not attached to admin, lives in /firestore
+import rateLimit from 'express-rate-limit'
 
 // Endpoint: Create group
 router.post('/addGroup', async (req, res) => {
@@ -102,8 +103,16 @@ router.post('/changeName', async (req, res) => {
   }
 });
 
+const joinWaitlistLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,              // Limit each IP to 5 requests per window
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true, // Send standard rate limit headers
+  legacyHeaders: false,  // Disable X-RateLimit-* headers (optional)
+});
+
 // Endpoint: Add email to waitlist
-router.post('/joinWaitlist', async (req, res) => {
+router.post('/joinWaitlist', joinWaitlistLimiter, async (req, res) => {
   const { email } = req.body;
 
   const isValidEmail = (email) => {
@@ -297,6 +306,8 @@ router.get('/group/:groupId', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+
 
 
 module.exports = router;
