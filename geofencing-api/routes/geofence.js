@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../firebase/admin');
 const {FieldValue} = require('firebase-admin/firestore'); // FieldValue is not attached to admin, lives in /firestore
-import rateLimit from 'express-rate-limit'
+const rateLimit = require('express-rate-limit');
+
 
 // Endpoint: Create group
 router.post('/addGroup', async (req, res) => {
