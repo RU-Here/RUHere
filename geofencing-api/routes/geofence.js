@@ -226,5 +226,38 @@ router.get('/leaveGroup/:userId/:groupId', async (req, res) => {
 //   }
 // });
 
+// Endpoint: Get group by ID
+router.get('/group/:groupId', async (req, res) => {
+  const groupId = req.params.groupId;
+
+  try {
+    const groupDoc = await db.collection('Groups').doc(groupId).get();
+    
+    if (!groupDoc.exists) {
+      return res.status(404).send({ error: 'Group not found' });
+    }
+
+    const groupData = groupDoc.data();
+    const personRefs = groupData.people || [];
+
+    const peopleData = await Promise.all(
+      personRefs.map(async (ref) => {
+        const personObject = await ref.get();
+        return { id: personObject.id, ...personObject.data() }
+      })
+    );
+    
+    const responseData = {
+      id: groupDoc.id,
+      ...groupData,
+      people: peopleData
+    };
+
+    res.status(200).send(responseData);
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 
 module.exports = router;
