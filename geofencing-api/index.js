@@ -4,25 +4,20 @@ const cors = require('cors');
 const path = require('path')
 const app = express();
 const geofenceRoutes = require('./routes/geofence');
+const getAuth = require('firebase/auth')
 
 const apiKeyMiddleware = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
-  
-  if (!apiKey) {
-    return res.status(401).json({ 
-      error: 'API key required',
-      message: 'Please provide an API key in the x-api-key header or Authorization header'
-    });
-  }
-  
-  const expectedApiKey = process.env.API_KEY_SECRET;
-  
-  if (apiKey !== expectedApiKey) {
-    return res.status(403).json({ 
-      error: 'Invalid API key',
-      message: 'The provided API key is invalid'
-    });
-  }
+  const idToken = req.headers.authorization;
+  getAuth()
+  .verifyIdToken(idToken)
+  .then((decodedToken) => {
+    const uid = decodedToken.uid;
+    // ...
+  })
+  .catch((error) => {
+    // Handle error
+    res.status(401).send('Unauthorized')
+  });
   
   next();
 };
