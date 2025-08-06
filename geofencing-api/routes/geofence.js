@@ -67,9 +67,9 @@ router.post('/userSignedIn', async (req, res) => {
   try {
     // Grab user, if it exists, say so
     const user = await db.collection('Users').doc(userId).get();
-    if (!user) {
+    if (!!user) {
       // If not, create user
-      await db.collection('Users').doc(userId).add({
+      await db.collection('Users').doc(userId).set({
         areaCode: null,
         name: name,
         pfp: pfp
