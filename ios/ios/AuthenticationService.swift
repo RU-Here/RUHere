@@ -10,6 +10,10 @@ class AuthenticationService: ObservableObject {
     @Published var errorMessage = ""
     @Published var isGuestMode = false
     
+    // MARK: - API Configuration
+    private let baseURL = "https://ru-here.vercel.app/api/geofence"
+    private let apiKey = ""
+    
     init() {
         user = Auth.auth().currentUser
         
@@ -77,6 +81,13 @@ class AuthenticationService: ObservableObject {
             user = authResult.user
             // Clear guest mode when user signs in
             isGuestMode = false
+            
+            // Call userSignedIn API endpoint
+            await callUserSignedInAPI(
+                userId: authResult.user.uid,
+                name: result.user.profile?.name ?? "Unknown",
+                pfp: result.user.profile?.imageURL(withDimension: 120)?.absoluteString ?? ""
+            )
         } catch {
             errorMessage = error.localizedDescription
             throw error
@@ -94,6 +105,47 @@ class AuthenticationService: ObservableObject {
     }
     
     // MARK: - Private Helpers
+    
+    private func callUserSignedInAPI(userId: String, name: String, pfp: String) async {
+        guard let url = URL(string: "\(baseURL)/userSignedIn") else {
+            print("❌ Invalid URL for userSignedIn endpoint")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        
+        let userData = [
+            "userId": userId,
+            "name": name,
+            "pfp": pfp
+        ]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: userData)
+            request.httpBody = jsonData
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 userSignedIn API Status Code: \(httpResponse.statusCode)")
+                
+                if httpResponse.statusCode == 200 {
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("✅ userSignedIn API Response: \(responseString)")
+                    }
+                } else {
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("❌ userSignedIn API Error: \(responseString)")
+                    }
+                }
+            }
+        } catch {
+            print("🌐 Network Error calling userSignedIn API: \(error.localizedDescription)")
+        }
+    }
     
     @MainActor
     private func getRootViewController() async -> UIViewController? {
