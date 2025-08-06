@@ -29,6 +29,14 @@
 				<string>com.googleusercontent.apps.107978976180-73l88ctguq7ks5ro66cidqk0e9evvnva</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.RUHere.joingroup</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ruhere</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

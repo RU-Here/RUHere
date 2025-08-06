@@ -183,12 +183,11 @@ struct ModernAddGroupCard: View {
 
 struct CreateGroupView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var groupService: GroupService
+    @EnvironmentObject var authService: AuthenticationService
     @State private var groupName = ""
     @State private var selectedEmoji = "🏠"
     @State private var isCreating = false
-    
-    let groupService: GroupService
-    let authService: AuthenticationService
 
     
     private let availableEmojis = [

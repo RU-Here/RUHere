@@ -7,6 +7,7 @@ class GroupService: ObservableObject {
     @Published var errorMessage: String?
     
     private let baseURL = "https://ru-here.vercel.app/api/geofence"
+    private let apiKey = ""
     
     func fetchGroups(for userId: String) async {
         DispatchQueue.main.async {
@@ -142,6 +143,130 @@ class GroupService: ObservableObject {
                 self.errorMessage = "Error creating group: \(error.localizedDescription)"
             }
             return false
+        }
+    }
+    
+    func addUserToGroup(groupId: String, userId: String) async -> Bool {
+        guard let url = URL(string: "\(baseURL)/addUsertoGroup") else {
+            DispatchQueue.main.async {
+                self.errorMessage = "Invalid URL"
+            }
+            return false
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        let userData = [
+            "groupId": groupId,
+            "userId": userId
+        ]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: userData)
+            request.httpBody = jsonData
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 Add user to group HTTP Status Code: \(httpResponse.statusCode)")
+                
+                if httpResponse.statusCode == 200 {
+                    // Refresh groups after successful addition
+                    await fetchGroups(for: userId)
+                    return true
+                } else {
+                    // Print response body for error cases
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("❌ Error response: \(responseString)")
+                    }
+                    DispatchQueue.main.async {
+                        self.errorMessage = "Failed to join group"
+                    }
+                    return false
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Invalid response format"
+                }
+                return false
+            }
+        } catch {
+            print("🌐 Network Error adding user to group: \(error)")
+            DispatchQueue.main.async {
+                self.errorMessage = "Error joining group: \(error.localizedDescription)"
+            }
+            return false
+        }
+    }
+    
+    func fetchGroupById(_ groupId: String) async -> UserGroup? {
+        guard let url = URL(string: "\(baseURL)/group/\(groupId)") else {
+            DispatchQueue.main.async {
+                self.errorMessage = "Invalid URL"
+            }
+            return nil
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Invalid response format"
+                }
+                return nil
+            }
+            
+            print("📡 Fetch group by ID HTTP Status Code: \(httpResponse.statusCode)")
+            
+            if httpResponse.statusCode == 200 {
+                let decoder = JSONDecoder()
+                let apiGroup = try decoder.decode(APIGroup.self, from: data)
+                
+                let userGroup = UserGroup(
+                    id: apiGroup.id,
+                    name: apiGroup.name,
+                    people: apiGroup.people.compactMap { apiPerson in
+                        guard let personName = apiPerson.name, !personName.isEmpty else {
+                            return nil
+                        }
+                        return Person(
+                            id: apiPerson.id,
+                            name: personName,
+                            areaCode: apiPerson.areaCode ?? ""
+                        )
+                    },
+                    emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
+                )
+                
+                print("✅ Successfully fetched group: \(userGroup.name)")
+                return userGroup
+            } else if httpResponse.statusCode == 404 {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Group not found"
+                }
+                return nil
+            } else {
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("❌ Error response: \(responseString)")
+                }
+                DispatchQueue.main.async {
+                    self.errorMessage = "Failed to fetch group details"
+                }
+                return nil
+            }
+        } catch {
+            print("🌐 Network Error fetching group: \(error)")
+            DispatchQueue.main.async {
+                self.errorMessage = "Network error: \(error.localizedDescription)"
+            }
+            return nil
         }
     }
 }

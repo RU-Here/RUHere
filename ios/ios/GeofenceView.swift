@@ -4,7 +4,7 @@ import MapKit
 
 struct GeofenceView: View {
     @StateObject private var geofenceManager = GeofenceManager()
-    @StateObject private var groupService = GroupService()
+    @EnvironmentObject var groupService: GroupService
     @EnvironmentObject var authService: AuthenticationService
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var selectedRegion: CLCircularRegion?
@@ -65,7 +65,7 @@ struct GeofenceView: View {
                 }
             }
             .sheet(isPresented: $showingCreateGroup) {
-                CreateGroupView(groupService: groupService, authService: authService)
+                CreateGroupView()
             }
             .task {
                 if let userId = getUserId() {
