@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path')
 const app = express();
 const geofenceRoutes = require('./routes/geofence');
-const getAuth = require('firebase/auth')
+const getAuth = require('firebase-admin/auth')
 
 const apiKeyMiddleware = (req, res, next) => {
   const idToken = req.headers.authorization;
