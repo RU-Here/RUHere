@@ -67,8 +67,7 @@ router.post('/userSignedIn', async (req, res) => {
   try {
     // Grab user, if it exists, say so
     const user = await db.collection('Users').doc(userId).get();
-
-    if (!user.exists()) {
+    if (!user) {
       // If not, create user
       await db.collection('Users').doc(userId).add({
         areaCode: null,
@@ -172,17 +171,21 @@ router.post('/enter', async (req, res) => {
     // Send notification to people already in the area of the new person
 
     // 1. Get all groups the userId is part of
-    const groupsOfUser = await fetch(`https://ru-here.vercel.app/api/geofence/allGroups/${userId}`);
-    const data = await groupsOfUser.json();
+    const groupsOfUser = await getAllGroupsByUser(userId, db);
     // 2. Get all friends in those groups
     const friends = data.people;
-    console.log(friends)
     // 3. Filter to get all friends where userId location == friend location
     // const usersToNotify = [];
     // friends.forEach(doc => {
     //   usersToNotify.push({userId: doc.id, ...doc.data()});
     // })
+    const usersToNotify = groupsOfUser.flatMap(group =>
+      group.people.filter(friend => friend.areaCode === areaCode)
+    );
     // 4. Call function that send notification to each friend filtered
+    for (const friend of usersToNotify) {
+      console.log('Notify')
+    }
     
 
     res.status(200).send({ message: 'Entered geofence logged.' });
@@ -226,27 +229,7 @@ router.get('/allGroups/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const userRef = db.collection('Users').doc(userId);
-
-    const groups = await db.collection('Groups')
-      .where('people', 'array-contains', userRef)
-      .get();
-    
-    const groupData = [];
-    for (const doc of groups.docs) {
-      const groupObjects = doc.data();
-      const personRefs = groupObjects.people || [];
-
-      const peopleData = await Promise.all(
-        personRefs.map(async (ref) => {
-          const personObject = await ref.get();
-            return { id: personObject.id, ...personObject.data() }
-        })
-      )
-      
-      groupData.push({ id: doc.id, ...doc.data(), people: peopleData });
-
-    }
+    const groupData = await getAllGroupsByUser(userId, db)
     console.log(groupData);
     console.log(groupData[0].people[0]);
     
@@ -256,8 +239,30 @@ router.get('/allGroups/:userId', async (req, res) => {
   }
 });
 
-const allGroupsByUser = {
+async function getAllGroupsByUser(userId, db) {
+  const userRef = db.collection('Users').doc(userId);
 
+  const groups = await db.collection('Groups')
+    .where('people', 'array-contains', userRef)
+    .get();
+  
+  const groupData = [];
+
+  for (const doc of groups.docs) {
+    const groupObjects = doc.data();
+    const personRefs = groupObjects.people || [];
+
+    const peopleData = await Promise.all(
+      personRefs.map(async (ref) => {
+        const personObject = await ref.get();
+        return { id: personObject.id, ...personObject.data() }
+      })
+    );
+
+    groupData.push({ id: doc.id, ...doc.data(), people: peopleData });
+  }
+
+  return groupData;
 }
 
 // Endpoint: Leave group
