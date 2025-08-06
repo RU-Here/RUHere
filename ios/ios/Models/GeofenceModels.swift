@@ -5,6 +5,7 @@ struct Person: Identifiable {
     let id: String
     let name: String
     let areaCode: String
+    let photoURL: String
 }
 
 struct UserGroup: Identifiable {

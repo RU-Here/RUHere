@@ -405,13 +405,17 @@ struct PersonAnnotationCalculator {
         // Filter people to only those in the same geofence as the current user
         let peopleInCurrentGeofence = selectedGroup.people.filter { $0.areaCode == currentUserGeofence }
         
-        // Group people by their area code (should all be the same now)
-        let groupedPeople = Dictionary(grouping: peopleInCurrentGeofence) { $0.areaCode }
-        
-        // Create annotations for each group of people
-        return groupedPeople.compactMap { (areaCode, people) -> PersonAnnotation? in
-            if let region = monitoredRegions.first(where: { $0.identifier == areaCode }) {
-                return PersonAnnotation(person: people[0], coordinate: region.center, allPeople: people, group: selectedGroup)
+        // Create individual annotations for each person
+        return peopleInCurrentGeofence.enumerated().compactMap { (index, person) -> PersonAnnotation? in
+            if let region = monitoredRegions.first(where: { $0.identifier == currentUserGeofence }) {
+                let scatteredCoordinate = MapUtilities.calculateScatteredPosition(
+                    centerCoordinate: region.center,
+                    radius: region.radius,
+                    groupIndex: index,
+                    totalGroups: peopleInCurrentGeofence.count
+                )
+                
+                return PersonAnnotation(person: person, coordinate: scatteredCoordinate, allPeople: [person], group: nil)
             }
             return nil
         }
@@ -423,34 +427,27 @@ struct PersonAnnotationCalculator {
         monitoredRegions: [CLCircularRegion]
     ) -> [PersonAnnotation] {
         // Collect all people from all groups who are in the current geofence
-        var allPeopleInGeofence: [(Person, UserGroup)] = []
+        var allPeopleInGeofence: [Person] = []
         for group in groups {
             let peopleInGeofence = group.people.filter { $0.areaCode == currentUserGeofence }
-            for person in peopleInGeofence {
-                allPeopleInGeofence.append((person, group))
-            }
+            allPeopleInGeofence.append(contentsOf: peopleInGeofence)
         }
         
-        // Group people by their group
-        let peopleByGroup = Dictionary(grouping: allPeopleInGeofence) { $0.1.id }
+        // Remove duplicates based on person ID
+        let uniquePeople = Array(Set(allPeopleInGeofence.map { $0.id }))
+            .compactMap { personId in allPeopleInGeofence.first { $0.id == personId } }
         
-        // Create annotations for each group that has people in the current geofence
-        let sortedGroupIds = Array(peopleByGroup.keys).sorted()
-        return sortedGroupIds.enumerated().compactMap { (index, groupId) -> PersonAnnotation? in
-            guard let peopleWithGroups = peopleByGroup[groupId] else { return nil }
-            
-            let people = peopleWithGroups.map { $0.0 }
-            let group = peopleWithGroups.first?.1
-            
+        // Create individual annotations for each person
+        return uniquePeople.enumerated().compactMap { (index, person) -> PersonAnnotation? in
             if let region = monitoredRegions.first(where: { $0.identifier == currentUserGeofence }) {
                 let scatteredCoordinate = MapUtilities.calculateScatteredPosition(
                     centerCoordinate: region.center,
                     radius: region.radius,
                     groupIndex: index,
-                    totalGroups: sortedGroupIds.count
+                    totalGroups: uniquePeople.count
                 )
                 
-                return PersonAnnotation(person: people[0], coordinate: scatteredCoordinate, allPeople: people, group: group)
+                return PersonAnnotation(person: person, coordinate: scatteredCoordinate, allPeople: [person], group: nil)
             }
             return nil
         }
