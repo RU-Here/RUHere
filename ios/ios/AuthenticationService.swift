@@ -51,6 +51,19 @@ class AuthenticationService: ObservableObject {
         do {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController)
             
+            // Validate email domain before proceeding
+            guard let email = result.user.profile?.email else {
+                errorMessage = "Could not retrieve email address"
+                isLoading = false
+                return
+            }
+            
+            guard email.lowercased().hasSuffix("@scarletmail.rutgers.edu") else {
+                errorMessage = "Only Rutgers University (@scarletmail.rutgers.edu) accounts are allowed"
+                isLoading = false
+                return
+            }
+            
             guard let idToken = result.user.idToken?.tokenString else {
                 errorMessage = "Failed to get ID token"
                 isLoading = false
