@@ -55,36 +55,61 @@ class GroupService: ObservableObject {
                 print("✅ Successfully decoded \(apiGroups.count) groups")
                 
                 DispatchQueue.main.async {
-                                            self.groups = apiGroups.map { apiGroup in
-                            UserGroup(
-                                id: apiGroup.id,
-                                name: apiGroup.name,
-                                people: apiGroup.people.compactMap { apiPerson in
-                                    // Only include people who have a name
-                                    guard let personName = apiPerson.name, !personName.isEmpty else {
-                                        print("⚠️ Skipping person with ID \(apiPerson.id) - missing name")
-                                        return nil
-                                    }
-                                    return Person(
-                                        id: apiPerson.id,
-                                        name: personName,
-                                        areaCode: apiPerson.areaCode ?? ""
-                                    )
-                                },
-                                emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
-                            )
-                        }
+                    self.groups = apiGroups.map { apiGroup in
+                        UserGroup(
+                            id: apiGroup.id,
+                            name: apiGroup.name,
+                            people: apiGroup.people.compactMap { apiPerson in
+                                // Only include people who have a name
+                                guard let personName = apiPerson.name, !personName.isEmpty else {
+                                    print("⚠️ Skipping person with ID \(apiPerson.id) - missing name")
+                                    return nil
+                                }
+                                return Person(
+                                    id: apiPerson.id,
+                                    name: personName,
+                                    areaCode: apiPerson.areaCode ?? "",
+                                    photoURL: apiPerson.photoURL ?? ""
+                                )
+                            },
+                            emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
+                        )
+                    }
                     self.isLoading = false
-                    print("🎉 Groups updated in UI: \(self.groups.count) groups")
+                    self.errorMessage = nil // Clear any previous errors
+                    
+                    if self.groups.isEmpty {
+                        print("👤 User is not part of any groups")
+                    } else {
+                        print("🎉 Groups updated in UI: \(self.groups.count) groups")
+                    }
+                }
+            } else if httpResponse.statusCode == 404 {
+                // User not found or no groups found
+                DispatchQueue.main.async {
+                    self.groups = []
+                    self.errorMessage = nil
+                    self.isLoading = false
+                    print("👤 No groups found for user")
+                }
+            } else if httpResponse.statusCode >= 500 {
+                // Server error
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("❌ Server error response: \(responseString)")
+                }
+                
+                DispatchQueue.main.async {
+                    self.errorMessage = "Server is temporarily unavailable. Please try again later."
+                    self.isLoading = false
                 }
             } else {
-                // Print response body for error cases
+                // Other client errors
                 if let responseString = String(data: data, encoding: .utf8) {
                     print("❌ Error response body: \(responseString)")
                 }
                 
                 DispatchQueue.main.async {
-                    self.errorMessage = "Server error: \(httpResponse.statusCode)"
+                    self.errorMessage = "Unable to load groups. Please check your connection and try again."
                     self.isLoading = false
                 }
             }
@@ -232,14 +257,15 @@ class GroupService: ObservableObject {
                 let userGroup = UserGroup(
                     id: apiGroup.id,
                     name: apiGroup.name,
-                    people: apiGroup.people.compactMap { apiPerson in
+                    people: apiGroup.people.compactMap { apiPerson -> Person? in
                         guard let personName = apiPerson.name, !personName.isEmpty else {
                             return nil
                         }
                         return Person(
                             id: apiPerson.id,
                             name: personName,
-                            areaCode: apiPerson.areaCode ?? ""
+                            areaCode: apiPerson.areaCode ?? "",
+                            photoURL: apiPerson.photoURL ?? ""
                         )
                     },
                     emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji

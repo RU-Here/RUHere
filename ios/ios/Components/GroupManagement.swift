@@ -43,6 +43,57 @@ struct ModernGroupsSection: View {
                 }
                 .frame(height: 120)
                 .padding(.horizontal, 20)
+            } else if groups.isEmpty {
+                // Empty state when user has no groups
+                VStack(spacing: 16) {
+                    Image(systemName: "person.2.circle")
+                        .font(.system(size: 48))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.accent, Color.accentLight],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    VStack(spacing: 8) {
+                        Text("No Groups Yet")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        
+                        Text("Create your first group to start connecting with friends")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                    }
+                    
+                    Button(action: {
+                        showingCreateGroup = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Create Your First Group")
+                        }
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.accent, Color.accentLight],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(25)
+                        .shadow(color: Color.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+                }
+                .frame(height: 180)
+                .padding(.horizontal, 20)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
