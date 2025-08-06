@@ -230,8 +230,6 @@ router.get('/allGroups/:userId', async (req, res) => {
 
   try {
     const groupData = await getAllGroupsByUser(userId, db)
-    console.log(groupData);
-    console.log(groupData[0].people[0]);
     
     res.status(200).send(groupData)
   } catch (error) {
