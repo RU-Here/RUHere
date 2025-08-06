@@ -61,17 +61,25 @@ router.post('/addUsertoGroup', async (req, res) => {
 });
 
 // Endpoint: User created
-router.post('/createUser', async (req, res) => {
+router.post('/userSignedIn', async (req, res) => {
   const { userId, name, pfp } = req.body;
 
   try {
-    await db.collection('Users').doc(userId).add({
-      areaCode: null,
-      name: name,
-      pfp: pfp
-    });
+    // Grab user, if it exists, say so
+    const user = await db.collection('Users').doc(userId).get();
 
-    res.status(200).send({ message: 'User created.'});
+    if (!user.exists()) {
+      // If not, create user
+      await db.collection('Users').doc(userId).add({
+        areaCode: null,
+        name: name,
+        pfp: pfp
+      });
+      res.status(200).send({ message: 'User created.'});
+    } else {
+      res.status(200).send({ message: 'User signed in.'});
+    }
+
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
@@ -156,12 +164,26 @@ router.post('/enter', async (req, res) => {
   const { userId, areaCode } = req.body;
 
   try {
-    await db.collection('Users').doc(userId).update({
+    await db.collection('Users').doc(userId).update({ // Update the user's location to this new one
       areaCode: areaCode
     });
 
     // If there are other users in the area, send notification to user of those people
     // Send notification to people already in the area of the new person
+
+    // 1. Get all groups the userId is part of
+    const groupsOfUser = await fetch(`https://ru-here.vercel.app/api/geofence/allGroups/${userId}`);
+    const data = await groupsOfUser.json();
+    // 2. Get all friends in those groups
+    const friends = data.people;
+    console.log(friends)
+    // 3. Filter to get all friends where userId location == friend location
+    // const usersToNotify = [];
+    // friends.forEach(doc => {
+    //   usersToNotify.push({userId: doc.id, ...doc.data()});
+    // })
+    // 4. Call function that send notification to each friend filtered
+    
 
     res.status(200).send({ message: 'Entered geofence logged.' });
   } catch (error) {
@@ -233,6 +255,10 @@ router.get('/allGroups/:userId', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+const allGroupsByUser = {
+
+}
 
 // Endpoint: Leave group
 router.get('/leaveGroup/:userId/:groupId', async (req, res) => {
