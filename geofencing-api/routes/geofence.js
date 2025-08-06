@@ -173,18 +173,17 @@ router.post('/enter', async (req, res) => {
     // 1. Get all groups the userId is part of
     const groupsOfUser = await getAllGroupsByUser(userId, db);
     // 2. Get all friends in those groups
-    const friends = data.people;
     // 3. Filter to get all friends where userId location == friend location
-    // const usersToNotify = [];
-    // friends.forEach(doc => {
-    //   usersToNotify.push({userId: doc.id, ...doc.data()});
-    // })
-    const usersToNotify = groupsOfUser.flatMap(group =>
-      group.people.filter(friend => friend.areaCode === areaCode)
+    const allFriends = groupsOfUser.flatMap(group =>
+      group.people.filter(friend => friend.areaCode === areaCode && friend.id != userId)
     );
-    // 4. Call function that send notification to each friend filtered
-    for (const friend of usersToNotify) {
-      console.log('Notify')
+    // Exclude counting duplicates of friends that are in multiple groups
+    const uniqueFriends = Array.from(
+      new Map(allFriends.map(friend => [friend.id, friend])).values()
+    );
+    // 5. Call function that send notification to each friend filtered
+    for (const friend of uniqueFriends) {
+      console.log(`Notify ${friend.name}`);
     }
     
 
