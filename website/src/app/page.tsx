@@ -14,11 +14,12 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        "https://ruhere.com/api/geofence/joinWaitlist",
+        "https://ru-here.vercel.app/api/geofence/joinWaitlist",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
           },
           body: JSON.stringify({ email }),
         }
