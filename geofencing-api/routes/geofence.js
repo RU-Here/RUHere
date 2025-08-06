@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../firebase/admin');
+const { db } = require('../firebase/admin');
 const {FieldValue} = require('firebase-admin/firestore'); // FieldValue is not attached to admin, lives in /firestore
 const rateLimit = require('express-rate-limit');
 

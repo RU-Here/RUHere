@@ -4,23 +4,26 @@ const cors = require('cors');
 const path = require('path')
 const app = express();
 const geofenceRoutes = require('./routes/geofence');
-const admin = require('firebase-admin')
+const { admin } = require('./firebase/admin')
 
 const apiKeyMiddleware = (req, res, next) => {
   const idToken = req.headers.authorization;
+  
   if (!idToken) {
-    return res.status(401).send('Unauthorized: Missing token');
+    return res.status(401).json({ error: 'No authorization token provided' });
   }
-
+  
   admin.auth()
   .verifyIdToken(idToken)
   .then((decodedToken) => {
     const uid = decodedToken.uid;
-    next();
+    console.log('Token verified for user:', uid);
+    req.user = decodedToken; 
+    next(); 
   })
   .catch((error) => {
-    // Handle error
-    res.status(401).send('Unauthorized')
+    console.error('Token verification failed:', error.message);
+    res.status(401).json({ error: 'Invalid or expired token' });
   });
 };
 
