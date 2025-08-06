@@ -108,7 +108,8 @@ struct AuthenticationView: View {
                         .scaleEffect(authService.isLoading ? 0.95 : 1.0)
                         .animation(.easeInOut(duration: 0.1), value: authService.isLoading)
                         
-                        // Continue without signing in button
+                        // Continue without signing in button (Development only)
+                        #if DEBUG
                         Button(action: {
                             authService.continueAsGuest()
                         }) {
@@ -125,6 +126,7 @@ struct AuthenticationView: View {
                                 )
                         }
                         .disabled(authService.isLoading)
+                        #endif
                         
                         // Privacy Notice
                         VStack(spacing: 4) {
