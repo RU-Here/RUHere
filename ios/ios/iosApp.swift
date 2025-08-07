@@ -17,16 +17,31 @@ class DeepLinkHandler: ObservableObject {
     func handleDeepLink(_ url: URL) {
         print("🔗 Processing deep link: \(url)")
         
-        // Parse ruhere://join/groupId
-        if url.host == "join", 
-           let groupId = url.pathComponents.last,
-           !groupId.isEmpty,
-           groupId != "/" {
-            print("📦 Extracted group ID: \(groupId)")
-            self.pendingGroupId = groupId
+        var groupId: String?
+        
+        // Handle both ruhere://join/groupId and https://ru-here.vercel.app/join/groupId
+        if url.scheme == "ruhere" {
+            // Parse ruhere://join/groupId
+            if url.host == "join",
+               let lastComponent = url.pathComponents.last,
+               !lastComponent.isEmpty,
+               lastComponent != "/" {
+                groupId = lastComponent
+            }
+        } else if url.scheme == "https" && url.host?.contains("ru-here.vercel.app") == true {
+            // Parse https://ru-here.vercel.app/join/groupId
+            let pathComponents = url.pathComponents
+            if pathComponents.count >= 3 && pathComponents[1] == "join" {
+                groupId = pathComponents[2]
+            }
+        }
+        
+        if let validGroupId = groupId, !validGroupId.isEmpty {
+            print("📦 Extracted group ID: \(validGroupId)")
+            self.pendingGroupId = validGroupId
             self.showJoinGroupView = true
         } else {
-            print("❌ Invalid deep link format. Expected: ruhere://join/groupId")
+            print("❌ Invalid deep link format. Expected: ruhere://join/groupId or https://ru-here.vercel.app/join/groupId")
         }
     }
     
@@ -63,8 +78,9 @@ struct iosApp: App {
                         return
                     }
                     
-                    // Handle RUHere deep links
-                    if url.scheme == "ruhere" {
+                    // Handle RUHere deep links (both custom scheme and universal links)
+                    if url.scheme == "ruhere" || 
+                       (url.scheme == "https" && url.host?.contains("ru-here.vercel.app") == true) {
                         deepLinkHandler.handleDeepLink(url)
                     }
                 }
