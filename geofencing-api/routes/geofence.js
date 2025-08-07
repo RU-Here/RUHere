@@ -60,6 +60,99 @@ router.post('/addUsertoGroup', async (req, res) => {
   }
 });
 
+// Endpoint: Remove user from group (admin only)
+router.post('/removeUserFromGroup', async (req, res) => {
+  const { groupId, userId, requesterId } = req.body;
+
+  if (!groupId || !userId || !requesterId) {
+    return res.status(400).send({ error: 'groupId, userId, and requesterId are required' });
+  }
+
+  try {
+    const groupRef = db.collection('Groups').doc(groupId);
+    const groupDoc = await groupRef.get();
+    if (!groupDoc.exists) {
+      return res.status(404).send({ error: 'Group not found' });
+    }
+
+    const groupData = groupDoc.data();
+    if (!groupData || groupData.admin !== requesterId) {
+      return res.status(403).send({ error: 'Only the group admin can remove members' });
+    }
+
+    const userRef = db.collection('Users').doc(userId);
+    await groupRef.update({
+      people: FieldValue.arrayRemove(userRef)
+    });
+
+    return res.status(200).send({ message: `User ${userId} removed from group ${groupId}` });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// Endpoint: Update group info (admin only)
+router.post('/updateGroupInfo', async (req, res) => {
+  const { groupId, name, emoji, requesterId } = req.body;
+
+  if (!groupId || !requesterId) {
+    return res.status(400).send({ error: 'groupId and requesterId are required' });
+  }
+
+  try {
+    const groupRef = db.collection('Groups').doc(groupId);
+    const groupDoc = await groupRef.get();
+    if (!groupDoc.exists) {
+      return res.status(404).send({ error: 'Group not found' });
+    }
+
+    const groupData = groupDoc.data();
+    if (!groupData || groupData.admin !== requesterId) {
+      return res.status(403).send({ error: 'Only the group admin can update group info' });
+    }
+
+    const update = {};
+    if (typeof name === 'string') update.name = name;
+    if (typeof emoji === 'string') update.emoji = emoji;
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).send({ error: 'No valid fields to update' });
+    }
+
+    await groupRef.update(update);
+    return res.status(200).send({ message: 'Group updated.' });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
+// Endpoint: Transfer admin (admin only)
+router.post('/transferAdmin', async (req, res) => {
+  const { groupId, newAdminId, requesterId } = req.body;
+
+  if (!groupId || !newAdminId || !requesterId) {
+    return res.status(400).send({ error: 'groupId, newAdminId, and requesterId are required' });
+  }
+
+  try {
+    const groupRef = db.collection('Groups').doc(groupId);
+    const groupDoc = await groupRef.get();
+    if (!groupDoc.exists) {
+      return res.status(404).send({ error: 'Group not found' });
+    }
+
+    const groupData = groupDoc.data();
+    if (!groupData || groupData.admin !== requesterId) {
+      return res.status(403).send({ error: 'Only the current admin can transfer admin role' });
+    }
+
+    await groupRef.update({ admin: newAdminId });
+    return res.status(200).send({ message: 'Admin transferred.' });
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+});
+
 // Endpoint: User created
 router.post('/userSignedIn', async (req, res) => {
   const { userId, name, pfp } = req.body;
