@@ -248,15 +248,16 @@ struct CreateGroupView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 24) {
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 24) {
                     Text("Create New Group")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.blue, Color.purple],
+                                colors: [Color.accent, Color.accentLight],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -276,8 +277,8 @@ struct CreateGroupView: View {
                                     impactFeedback.impactOccurred()
                                 }) {
                                     let isSelected = selectedEmoji == emoji
-                                    let backgroundColor = isSelected ? Color.blue.opacity(0.2) : Color.background.opacity(0.8)
-                                    let borderColor = isSelected ? Color.blue : Color.clear
+                                    let backgroundColor = isSelected ? Color.accent.opacity(0.15) : Color.background.opacity(0.8)
+                                    let borderColor = isSelected ? Color.accent : Color.clear
                                     
                                     Text(emoji)
                                         .font(.title2)
@@ -288,6 +289,8 @@ struct CreateGroupView: View {
                                             RoundedRectangle(cornerRadius: 12)
                                                 .stroke(borderColor, lineWidth: 2)
                                         )
+                                        .scaleEffect(isSelected ? 1.1 : 1.0)
+                                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
                                 }
                             }
                         }
@@ -297,34 +300,47 @@ struct CreateGroupView: View {
                 .padding(.top, 20)
                 
                 // Form Section
-                VStack(spacing: 20) {
-                    // Group Name
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Group Name")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                ModernCardView {
+                    VStack(spacing: 24) {
+                        // Group Name
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "textformat")
+                                    .foregroundColor(.accent)
+                                Text("Group Name")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            TextField("Enter group name", text: $groupName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .font(.body)
+                        }
                         
-                        TextField("Enter group name", text: $groupName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .font(.body)
-                    }
-                    
-                    // Info about adding people
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Adding People")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                        Divider()
+                            .background(.quaternary)
                         
-                        Text("People can join this group using invite links after creation.")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.leading)
+                        // Info about adding people
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.badge.plus")
+                                    .foregroundColor(.accent)
+                                Text("Adding People")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            Text("People can join this group using invite links after creation.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.leading)
+                        }
                     }
+                    .padding(24)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 32)
-                
-                Spacer()
+                .padding(.horizontal, 20)
                 
                 // Action Buttons
                 VStack(spacing: 12) {
@@ -351,13 +367,16 @@ struct CreateGroupView: View {
                         .frame(height: 50)
                         .background(
                             LinearGradient(
-                                colors: [Color.blue, Color.purple],
+                                colors: [Color.accent, Color.accentLight],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
-                        .cornerRadius(12)
+                        .cornerRadius(25)
+                        .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                         .opacity(buttonOpacity)
+                        .scaleEffect(isDisabled ? 0.98 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: isDisabled)
                     }
                     .disabled(groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isCreating)
                     
@@ -370,10 +389,12 @@ struct CreateGroupView: View {
                             .frame(height: 50)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
                 .padding(.bottom, 32)
+                }
+                .padding(.top, 20)
             }
-            .background(Color.background)
+            .background(Color.background.ignoresSafeArea())
         }
     }
     

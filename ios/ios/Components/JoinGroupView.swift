@@ -24,80 +24,110 @@ struct JoinGroupView: View {
                 
                 if isLoadingGroupDetails {
                     // Loading state
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text("Loading group details...")
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                    ModernCardView {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.accent)
+                            Text("Loading group details...")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(32)
                     }
+                    .padding(.horizontal, 24)
                 } else if let group = groupDetails {
                     // Group details
-                    VStack(spacing: 16) {
-                        // Group emoji
-                        Text(group.emoji)
-                            .font(.system(size: 60))
-                        
-                        // Group name
-                        Text(group.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.center)
-                        
-                        // Join invitation text
-                        Text("You've been invited to join this group!")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        // People in group (up to 3)
-                        if !group.people.isEmpty {
-                            VStack(spacing: 8) {
-                                Text("Members")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                
-                                let displayPeople = Array(group.people.prefix(3))
-                                ForEach(displayPeople) { person in
+                    ModernCardView {
+                        VStack(spacing: 20) {
+                            // Group emoji
+                            Text(group.emoji)
+                                .font(.system(size: 60))
+                            
+                            // Group name
+                            Text(group.name)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.primary)
+                            
+                            // Join invitation text
+                            Text("You've been invited to join this group!")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 8)
+                            
+                            // People in group (up to 3)
+                            if !group.people.isEmpty {
+                                VStack(spacing: 12) {
                                     HStack {
-                                        Image(systemName: "person.circle.fill")
-                                            .foregroundColor(.blue)
-                                        Text(person.name)
-                                            .font(.body)
+                                        Image(systemName: "person.2.fill")
+                                            .foregroundColor(.accent)
+                                        Text("Members")
+                                            .font(.headline)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.primary)
                                         Spacer()
                                     }
+                                    
+                                    let displayPeople = Array(group.people.prefix(3))
+                                    ForEach(displayPeople) { person in
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "person.circle.fill")
+                                                .foregroundColor(.accent)
+                                                .font(.title3)
+                                            Text(person.name)
+                                                .font(.body)
+                                                .fontWeight(.medium)
+                                            Spacer()
+                                        }
+                                    }
+                                    
+                                    if group.people.count > 3 {
+                                        Text("and \(group.people.count - 3) more")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
-                                
-                                if group.people.count > 3 {
-                                    Text("and \(group.people.count - 3) more")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                                .padding(16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.ultraThinMaterial)
+                                )
                             }
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
                         }
+                        .padding(24)
                     }
+                    .padding(.horizontal, 24)
                 } else {
                     // Error state - group not found
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 60))
-                            .foregroundColor(.orange)
-                        
-                        Text("Group Not Found")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Text("This group might have been deleted or the link is invalid.")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                    ModernCardView {
+                        VStack(spacing: 20) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 60))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.orange, .red],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            
+                            Text("Group Not Found")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            
+                            Text("This group might have been deleted or the link is invalid.")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 8)
+                        }
+                        .padding(24)
                     }
+                    .padding(.horizontal, 24)
                 }
                 
                 Spacer()
@@ -105,56 +135,105 @@ struct JoinGroupView: View {
                 // Join Button (only show if group details loaded successfully)
                 if groupDetails != nil && !isLoadingGroupDetails {
                     if hasJoined {
-                        VStack(spacing: 16) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(.green)
-                            
-                            Text("Successfully joined the group!")
-                                .font(.headline)
-                                .foregroundColor(.green)
-                            
-                            Button("Done") {
-                                dismiss()
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    } else {
-                        Button(action: joinGroup) {
-                            HStack {
-                                if isJoining {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                        .foregroundColor(.white)
-                                }
-                                Text(isJoining ? "Joining..." : "Join Group")
+                        ModernCardView {
+                            VStack(spacing: 16) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 50))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.green, .mint],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 4)
+                                
+                                Text("Successfully joined the group!")
+                                    .font(.headline)
                                     .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button("Done") {
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                    impactFeedback.impactOccurred()
+                                    dismiss()
+                                }
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 32)
+                                .padding(.vertical, 12)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.accent, Color.accentLight],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(25)
+                                .shadow(color: Color.accent.opacity(0.3), radius: 8, x: 0, y: 4)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .padding(24)
                         }
-                        .disabled(isJoining || !authService.canProceed)
                         .padding(.horizontal, 24)
-                        
-                        if !authService.canProceed {
-                            Text("Please sign in to join groups")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .padding(.top, 8)
+                    } else {
+                        VStack(spacing: 12) {
+                            Button(action: joinGroup) {
+                                HStack(spacing: 8) {
+                                    if isJoining {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                            .tint(.white)
+                                    }
+                                    Text(isJoining ? "Joining..." : "Join Group")
+                                        .fontWeight(.semibold)
+                                    
+                                    if !isJoining {
+                                        Image(systemName: "person.badge.plus")
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.accent, Color.accentLight],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .foregroundColor(.white)
+                                .cornerRadius(25)
+                                .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
+                            }
+                            .disabled(isJoining || !authService.canProceed)
+                            .opacity((isJoining || !authService.canProceed) ? 0.6 : 1.0)
+                            .scaleEffect((isJoining || !authService.canProceed) ? 0.98 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: isJoining)
+                            .padding(.horizontal, 24)
+                            
+                            if !authService.canProceed {
+                                Text("Please sign in to join groups")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                            }
                         }
                     }
                 }
                 
                 // Cancel Button
                 Button("Cancel") {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                    impactFeedback.impactOccurred()
                     dismiss()
                 }
+                .font(.headline)
                 .foregroundColor(.secondary)
                 .padding(.bottom, 32)
             }
+            .background(Color.background.ignoresSafeArea())
             .navigationBarHidden(true)
             .alert("Error", isPresented: $showError) {
                 Button("OK") { }

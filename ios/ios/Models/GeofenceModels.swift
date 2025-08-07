@@ -13,6 +13,7 @@ struct UserGroup: Identifiable {
     let name: String
     let people: [Person]
     let emoji: String // use image later
+    let admin: String
 }
 
 struct GeofenceAnnotation: Identifiable {

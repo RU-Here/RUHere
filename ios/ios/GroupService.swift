@@ -97,7 +97,8 @@ class GroupService: ObservableObject {
                                 photoURL: apiPerson.photoURL ?? ""
                             )
                         },
-                        emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
+                        emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji,
+                        admin: apiGroup.admin
                     )
                 }
                 
@@ -363,7 +364,8 @@ class GroupService: ObservableObject {
                             photoURL: apiPerson.photoURL ?? ""
                         )
                     },
-                    emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji
+                    emoji: apiGroup.emoji.isEmpty ? "🏠" : apiGroup.emoji,
+                    admin: apiGroup.admin
                 )
                 
                 print("✅ Successfully fetched group: \(userGroup.name)")
