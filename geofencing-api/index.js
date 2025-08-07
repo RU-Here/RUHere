@@ -31,7 +31,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.json());
 
-// Apply API key middleware to all routes
+// Public routes (no authentication required)
+const publicRoutes = require('./routes/public');
+app.use('/api/public', publicRoutes);
+
+// Apply API key middleware to all routes except public ones
 app.use(apiKeyMiddleware);
 
 app.use('/api/geofence', geofenceRoutes);
