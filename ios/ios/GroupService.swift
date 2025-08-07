@@ -307,6 +307,142 @@ class GroupService: ObservableObject {
         }
     }
     
+    // MARK: - Admin Actions
+    func removeUserFromGroup(groupId: String, userId: String, requesterId: String) async -> Bool {
+        guard let url = URL(string: "\(baseURL)/removeUserFromGroup") else {
+            DispatchQueue.main.async { self.errorMessage = "Invalid URL" }
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                DispatchQueue.main.async { self.errorMessage = "Authentication required" }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async { self.errorMessage = "Failed to authenticate: \(error.localizedDescription)" }
+            return false
+        }
+
+        let payload: [String: Any] = [
+            "groupId": groupId,
+            "userId": userId,
+            "requesterId": requesterId
+        ]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+                await fetchGroups(for: requesterId)
+                return true
+            } else {
+                if let http = response as? HTTPURLResponse, let s = String(data: data, encoding: .utf8) { print("Remove user error (\(http.statusCode)): \(s)") }
+                DispatchQueue.main.async { self.errorMessage = "Failed to remove member" }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async { self.errorMessage = "Network error: \(error.localizedDescription)" }
+            return false
+        }
+    }
+
+    func updateGroupInfo(groupId: String, name: String?, emoji: String?, requesterId: String) async -> Bool {
+        guard let url = URL(string: "\(baseURL)/updateGroupInfo") else {
+            DispatchQueue.main.async { self.errorMessage = "Invalid URL" }
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                DispatchQueue.main.async { self.errorMessage = "Authentication required" }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async { self.errorMessage = "Failed to authenticate: \(error.localizedDescription)" }
+            return false
+        }
+
+        var payload: [String: Any] = [
+            "groupId": groupId,
+            "requesterId": requesterId
+        ]
+        if let name = name { payload["name"] = name }
+        if let emoji = emoji { payload["emoji"] = emoji }
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+                await fetchGroups(for: requesterId)
+                return true
+            } else {
+                if let http = response as? HTTPURLResponse, let s = String(data: data, encoding: .utf8) { print("Update group error (\(http.statusCode)): \(s)") }
+                DispatchQueue.main.async { self.errorMessage = "Failed to update group" }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async { self.errorMessage = "Network error: \(error.localizedDescription)" }
+            return false
+        }
+    }
+
+    func transferAdmin(groupId: String, newAdminId: String, requesterId: String) async -> Bool {
+        guard let url = URL(string: "\(baseURL)/transferAdmin") else {
+            DispatchQueue.main.async { self.errorMessage = "Invalid URL" }
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            if let idToken = try await authService.getCurrentUserIdToken() {
+                request.setValue(idToken, forHTTPHeaderField: "authorization")
+            } else {
+                DispatchQueue.main.async { self.errorMessage = "Authentication required" }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async { self.errorMessage = "Failed to authenticate: \(error.localizedDescription)" }
+            return false
+        }
+
+        let payload: [String: Any] = [
+            "groupId": groupId,
+            "newAdminId": newAdminId,
+            "requesterId": requesterId
+        ]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+                await fetchGroups(for: requesterId)
+                return true
+            } else {
+                if let http = response as? HTTPURLResponse, let s = String(data: data, encoding: .utf8) { print("Transfer admin error (\(http.statusCode)): \(s)") }
+                DispatchQueue.main.async { self.errorMessage = "Failed to transfer admin" }
+                return false
+            }
+        } catch {
+            DispatchQueue.main.async { self.errorMessage = "Network error: \(error.localizedDescription)" }
+            return false
+        }
+    }
     func fetchGroupById(_ groupId: String) async -> UserGroup? {
         guard let url = URL(string: "\(baseURL)/group/\(groupId)") else {
             DispatchQueue.main.async {

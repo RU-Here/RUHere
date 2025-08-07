@@ -59,28 +59,6 @@ struct RegionDetailView: View {
                 }
                 .padding(.horizontal, 20)
                 
-                // Additional info card
-                ModernCardView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "info.circle.fill")
-                                .foregroundColor(.accent)
-                                .font(.title2)
-                            Text("About This Area")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Text("This is a tracked location where you can see friends when they're nearby. The circle on the map shows the detection area.")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .lineLimit(nil)
-                    }
-                    .padding(24)
-                }
-                .padding(.horizontal, 20)
-                
                 Spacer()
             }
             .background(Color.background.ignoresSafeArea())

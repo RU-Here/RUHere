@@ -438,3 +438,252 @@ struct CreateGroupView: View {
         return nil
     }
 } 
+
+// MARK: - Manage Group (Admin Only)
+struct ManageGroupView: View {
+    let group: UserGroup
+    @EnvironmentObject var groupService: GroupService
+    @EnvironmentObject var authService: AuthenticationService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var newGroupName: String
+    @State private var newEmoji: String
+    // Auto-save instead of explicit save button
+    @State private var isRemoving = false
+    @State private var errorMessage: String?
+    @State private var members: [Person]
+    @State private var removingIds: Set<String> = []
+    @State private var showRemovedBanner = false
+    @State private var lastRemovedName: String = ""
+    @State private var updateInfoTask: Task<Void, Never>? = nil
+    @State private var pollingTask: Task<Void, Never>? = nil
+
+    init(group: UserGroup) {
+        self.group = group
+        _newGroupName = State(initialValue: group.name)
+        _newEmoji = State(initialValue: group.emoji)
+        _members = State(initialValue: group.people)
+    }
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 24) {
+                    groupInfoSection
+                    membersSection
+                    errorSection
+                    actionsSection
+                }
+                .padding(.top, 20)
+            }
+            .background(Color.background.ignoresSafeArea())
+            .navigationTitle("Manage Group")
+            .navigationBarTitleDisplayMode(.inline)
+            .overlay(alignment: .top) { removedBannerOverlay }
+            // Keep UI in sync with backend changes
+            .onReceive(groupService.$groups) { groups in
+                guard let latest = groups.first(where: { $0.id == group.id }) else { return }
+                if latest.name != newGroupName { newGroupName = latest.name }
+                if latest.emoji != newEmoji { newEmoji = latest.emoji }
+                if latest.people.map({ $0.id }) != members.map({ $0.id }) {
+                    withAnimation { members = latest.people }
+                }
+            }
+            .task {
+                // Poll for updates while this view is presented
+                guard let uid = requesterId() else { return }
+                pollingTask?.cancel()
+                pollingTask = Task {
+                    while !Task.isCancelled {
+                        await groupService.fetchGroups(for: uid)
+                        try? await Task.sleep(nanoseconds: 3_000_000_000) // 3s
+                    }
+                }
+            }
+            .onDisappear {
+                pollingTask?.cancel()
+                pollingTask = nil
+                updateInfoTask?.cancel()
+                updateInfoTask = nil
+            }
+        }
+    }
+
+    private func requesterId() -> String? {
+        if let user = authService.user { return user.uid }
+        if authService.isGuestMode { return "guest_user" }
+        return nil
+    }
+
+    private func scheduleGroupInfoUpdate() {
+        guard let requesterId = requesterId() else { return }
+        let nameValue = newGroupName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let emojiValue = newEmoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        updateInfoTask?.cancel()
+        updateInfoTask = Task { [nameValue, emojiValue] in
+            try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s debounce
+            _ = await groupService.updateGroupInfo(groupId: group.id, name: nameValue, emoji: emojiValue, requesterId: requesterId)
+        }
+    }
+
+    private func remove(person: Person) async {
+        guard let requesterId = requesterId() else { return }
+        await MainActor.run { removingIds.insert(person.id) }
+        let success = await groupService.removeUserFromGroup(groupId: group.id, userId: person.id, requesterId: requesterId)
+        await MainActor.run {
+            removingIds.remove(person.id)
+            if success {
+                let impact = UINotificationFeedbackGenerator()
+                impact.notificationOccurred(.success)
+                withAnimation {
+                    members.removeAll { $0.id == person.id }
+                }
+                lastRemovedName = person.name
+                withAnimation { showRemovedBanner = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation { showRemovedBanner = false }
+                }
+            } else {
+                let impact = UINotificationFeedbackGenerator()
+                impact.notificationOccurred(.error)
+                errorMessage = groupService.errorMessage
+            }
+        }
+    }
+}
+
+// MARK: - Small subviews to simplify type-checking
+private extension ManageGroupView {
+    @ViewBuilder var groupInfoSection: some View {
+        ModernCardView {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 8) {
+                    Image(systemName: "pencil.circle.fill").foregroundColor(.accent)
+                    Text("Group Info").font(.headline).fontWeight(.semibold)
+                }
+
+                TextField("Group name", text: $newGroupName)
+                    .onChange(of: newGroupName) { _, _ in
+                        scheduleGroupInfoUpdate()
+                    }
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                HStack {
+                    Text("Emoji").foregroundColor(.secondary)
+                    Spacer()
+                    TextField("Emoji", text: $newEmoji)
+                        .onChange(of: newEmoji) { _, _ in
+                            scheduleGroupInfoUpdate()
+                        }
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 80)
+                }
+            }
+            .padding(16)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder var membersSection: some View {
+        ModernCardView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.2.fill").foregroundColor(.accent)
+                    Text("Members (\(members.count))").font(.headline).fontWeight(.semibold)
+                }
+
+                ForEach(members, id: \.id) { person in
+                    VStack {
+                        MemberRowView(
+                            person: person,
+                            isAdmin: person.id == group.admin,
+                            isRemoving: removingIds.contains(person.id),
+                            onRemove: {
+                                Task { await remove(person: person) }
+                            }
+                        )
+                        Divider().background(.quaternary)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                }
+            }
+            .padding(16)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder var errorSection: some View {
+        if let errorMessage = errorMessage {
+            Text(errorMessage)
+                .font(.callout)
+                .foregroundColor(.red)
+                .padding(.horizontal, 24)
+        }
+    }
+
+    @ViewBuilder var actionsSection: some View {
+        VStack(spacing: 12) {
+            Button("Done") { dismiss() }
+                .font(.headline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 50)
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
+    }
+
+    @ViewBuilder var removedBannerOverlay: some View {
+        if showRemovedBanner {
+            RemovedBanner(name: lastRemovedName)
+                .padding(.top, 12)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+// MARK: - Small subviews to simplify type-checking
+private struct MemberRowView: View {
+    let person: Person
+    let isAdmin: Bool
+    let isRemoving: Bool
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack {
+            Text(person.name)
+                .fontWeight(.medium)
+            Spacer()
+            if !isAdmin {
+                if isRemoving {
+                    ProgressView().scaleEffect(0.9)
+                } else {
+                    Button(action: onRemove) {
+                        Image(systemName: "minus.circle.fill").foregroundColor(.red)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+private struct RemovedBanner: View {
+    let name: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+            Text("Removed \(name)")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+        )
+    }
+}

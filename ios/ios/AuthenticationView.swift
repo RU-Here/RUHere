@@ -6,13 +6,9 @@ struct AuthenticationView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient
-                LinearGradient(
-                    colors: [Color.blue.opacity(0.1), Color.white],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Unified app background
+                Color.background
+                    .ignoresSafeArea()
                 
                 VStack(spacing: 40) {
                     Spacer()
@@ -22,8 +18,14 @@ struct AuthenticationView: View {
                         // App Icon
                         Image(systemName: "location.circle.fill")
                             .font(.system(size: 80))
-                            .foregroundColor(.blue)
-                            .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color.accent, Color.accentLight],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                         
                         // App Name
                         Text("RUHere")
@@ -96,13 +98,13 @@ struct AuthenticationView: View {
                             .padding(.vertical, 16)
                             .background(
                                 LinearGradient(
-                                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                                    colors: [Color.accent, Color.accentLight],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .cornerRadius(12)
-                            .shadow(color: .blue.opacity(0.4), radius: 8, x: 0, y: 4)
+                            .cornerRadius(25)
+                            .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                         }
                         .disabled(authService.isLoading)
                         .scaleEffect(authService.isLoading ? 0.95 : 1.0)
@@ -116,12 +118,12 @@ struct AuthenticationView: View {
                             Text("Continue without signing in")
                                 .font(.headline)
                                 .fontWeight(.medium)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.accent)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.blue, lineWidth: 2)
+                                        .stroke(Color.accent, lineWidth: 2)
                                         .fill(Color.clear)
                                 )
                         }

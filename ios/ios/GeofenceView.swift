@@ -11,6 +11,7 @@ struct GeofenceView: View {
     @State private var showingRegionDetail = false
     @State private var selectedGroup: UserGroup?
     @State private var showingCreateGroup = false
+    @State private var showingManageGroup = false
     @State private var showingProfile = false
     @State private var hasPerformedInitialZoom = false
     
@@ -40,7 +41,7 @@ struct GeofenceView: View {
     var body: some View {
         NavigationView {
             mainContentView
-            .navigationTitle("RuHere")
+            .navigationTitle("RUHere")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(false)
             .toolbar {
@@ -50,7 +51,7 @@ struct GeofenceView: View {
                     }) {
                         Image(systemName: "person.circle.fill")
                             .font(.title)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.accent)
                             .background(
                                 Circle()
                                     .fill(.ultraThinMaterial)
@@ -121,6 +122,22 @@ struct GeofenceView: View {
                     isLoading: groupService.isLoading,
                     errorMessage: groupService.errorMessage
                 )
+                .overlay(alignment: .topTrailing) {
+                    if let selectedGroup, let currentUserId = authService.user?.uid ?? (authService.isGuestMode ? "guest_user" : nil), selectedGroup.admin == currentUserId {
+                        Button {
+                            showingManageGroup = true
+                        } label: {
+                            Label("Manage", systemImage: "gearshape.fill")
+                                .font(.caption)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(12)
+                        }
+                        .padding(.trailing, 28)
+                        .padding(.top, 8)
+                    }
+                }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
@@ -167,6 +184,11 @@ struct GeofenceView: View {
         }
         .onChange(of: geofenceManager.currentUserGeofence) { oldValue, newValue in
             handleUserGeofenceChange()
+        }
+        .sheet(isPresented: $showingManageGroup) {
+            if let g = selectedGroup {
+                ManageGroupView(group: g)
+            }
         }
     }
     

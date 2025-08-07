@@ -234,7 +234,8 @@ struct JoinGroupView: View {
                 .padding(.bottom, 32)
             }
             .background(Color.background.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Join Group")
             .alert("Error", isPresented: $showError) {
                 Button("OK") { }
             } message: {

@@ -8,13 +8,9 @@ struct ProfileView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient matching AuthenticationView
-                LinearGradient(
-                    colors: [Color.blue.opacity(0.1), Color.white],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Unified app background
+                Color.background
+                    .ignoresSafeArea()
                 
                 if authService.isGuestMode {
                     guestModeView
@@ -23,7 +19,7 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
@@ -34,8 +30,8 @@ struct ProfileView: View {
                 // Profile Image
                 Image(systemName: "person.circle")
                     .font(.system(size: 80))
-                    .foregroundColor(.gray)
-                    .shadow(color: .gray.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .foregroundColor(.secondary)
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 
                 VStack(spacing: 8) {
                     Text("Guest User")
@@ -52,7 +48,7 @@ struct ProfileView: View {
                 VStack(spacing: 12) {
                     HStack {
                         Image(systemName: "info.circle")
-                            .foregroundColor(.blue)
+                            .foregroundColor(.accent)
                         Text("Limited functionality in guest mode")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
@@ -62,8 +58,8 @@ struct ProfileView: View {
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.blue.opacity(0.1))
-                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                        .fill(Color.accent.opacity(0.08))
+                        .stroke(Color.accent.opacity(0.3), lineWidth: 1)
                 )
             }
             .padding(.top, 20)
@@ -94,13 +90,13 @@ struct ProfileView: View {
                     .padding(.vertical, 16)
                     .background(
                         LinearGradient(
-                            colors: [Color.blue, Color.blue.opacity(0.8)],
+                            colors: [Color.accent, Color.accentLight],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
-                    .cornerRadius(12)
-                    .shadow(color: .blue.opacity(0.4), radius: 8, x: 0, y: 4)
+                    .cornerRadius(25)
+                    .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
                 
                 // Exit Guest Mode Button
@@ -114,12 +110,12 @@ struct ProfileView: View {
                             .font(.headline)
                             .fontWeight(.medium)
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray, lineWidth: 1)
+                            .stroke(Color.secondary.opacity(0.6), lineWidth: 1)
                             .fill(Color.clear)
                     )
                 }
@@ -149,8 +145,14 @@ struct ProfileView: View {
                 // Profile Image
                 Image(systemName: "person.circle.fill")
                     .font(.system(size: 80))
-                    .foregroundColor(.blue)
-                    .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.accent, Color.accentLight],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                 
                 if let user = authService.user {
                     VStack(spacing: 8) {
@@ -179,7 +181,7 @@ struct ProfileView: View {
                     .padding(20)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.white)
+                            .fill(Color.cardBackground)
                             .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                     )
                 }
@@ -206,13 +208,13 @@ struct ProfileView: View {
                     .padding(.vertical, 16)
                     .background(
                         LinearGradient(
-                            colors: [Color.red, Color.red.opacity(0.8)],
+                            colors: [Color.accent, Color.accentLight],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
-                    .cornerRadius(12)
-                    .shadow(color: .red.opacity(0.4), radius: 8, x: 0, y: 4)
+                    .cornerRadius(25)
+                    .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
             }
             .padding(.horizontal, 30)
