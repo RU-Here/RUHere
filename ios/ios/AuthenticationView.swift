@@ -6,9 +6,7 @@ struct AuthenticationView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Unified app background
-                Color.background
-                    .ignoresSafeArea()
+                AppBackground()
                 
                 VStack(spacing: 40) {
                     Spacer()
@@ -93,18 +91,7 @@ struct AuthenticationView: View {
                                     .font(.headline)
                                     .fontWeight(.semibold)
                             }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.accent, Color.accentLight],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(25)
-                            .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .buttonStyle(PrimaryButtonStyle())
                         }
                         .disabled(authService.isLoading)
                         .scaleEffect(authService.isLoading ? 0.95 : 1.0)
@@ -116,17 +103,8 @@ struct AuthenticationView: View {
                             authService.continueAsGuest()
                         }) {
                             Text("Continue without signing in")
-                                .font(.headline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.accent)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.accent, lineWidth: 2)
-                                        .fill(Color.clear)
-                                )
                         }
+                        .buttonStyle(SecondaryButtonStyle())
                         .disabled(authService.isLoading)
                         #endif
                         

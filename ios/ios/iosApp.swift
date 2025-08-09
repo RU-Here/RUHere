@@ -8,6 +8,7 @@
 import SwiftUI
 import Firebase
 import GoogleSignIn
+import UIKit
 
 // MARK: - Deep Link Handler
 class DeepLinkHandler: ObservableObject {
@@ -61,6 +62,8 @@ struct iosApp: App {
     init() {
         // Configure Firebase
         FirebaseApp.configure()
+        // Global UI appearance
+        AppTheme.setupAppearance()
     }
     
     var body: some Scene {
@@ -69,6 +72,7 @@ struct iosApp: App {
                 .environmentObject(authService)
                 .environmentObject(getOrCreateGroupService())
                 .environmentObject(deepLinkHandler)
+                // Allow system to toggle light/dark; our colors adapt
                 .onOpenURL { url in
                     print("📱 Received URL: \(url)")
                     

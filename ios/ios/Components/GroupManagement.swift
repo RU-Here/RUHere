@@ -123,9 +123,12 @@ struct ModernGroupsSection: View {
         }
         .padding(.vertical, 20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
-                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+                LinearGradient(
+                    colors: [Color.cardBackground.opacity(0.95), Color.cardBackground.opacity(0.75)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Color.accent.opacity(0.25), radius: 14, x: 0, y: 8)
         )
         .padding(.horizontal, 16)
         .padding(.bottom, 34) // Safe area bottom padding

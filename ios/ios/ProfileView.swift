@@ -8,9 +8,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Unified app background
-                Color.background
-                    .ignoresSafeArea()
+                AppBackground()
                 
                 if authService.isGuestMode {
                     guestModeView
@@ -85,19 +83,8 @@ struct ProfileView: View {
                             .font(.headline)
                             .fontWeight(.semibold)
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.accent, Color.accentLight],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(25)
-                    .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
+                .buttonStyle(PrimaryButtonStyle())
                 
                 // Exit Guest Mode Button
                 Button(action: {
@@ -110,19 +97,13 @@ struct ProfileView: View {
                             .font(.headline)
                             .fontWeight(.medium)
                     }
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.secondary.opacity(0.6), lineWidth: 1)
-                            .fill(Color.clear)
-                    )
                 }
+                .buttonStyle(SecondaryButtonStyle())
             }
             .padding(.horizontal, 30)
             .padding(.bottom, 40)
         }
+        .foregroundColor(.primary)
         .padding(.horizontal, 30)
         .alert("Exit Guest Mode", isPresented: $showingSignOutAlert) {
             Button("Cancel", role: .cancel) { }
@@ -203,23 +184,13 @@ struct ProfileView: View {
                             .font(.headline)
                             .fontWeight(.semibold)
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.accent, Color.accentLight],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(25)
-                    .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
+                .buttonStyle(PrimaryButtonStyle())
             }
             .padding(.horizontal, 30)
             .padding(.bottom, 40)
         }
+        .foregroundColor(.primary)
         .padding(.horizontal, 30)
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Cancel", role: .cancel) { }

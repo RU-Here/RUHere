@@ -194,18 +194,8 @@ struct JoinGroupView: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.accent, Color.accentLight],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .foregroundColor(.white)
-                                .cornerRadius(25)
-                                .shadow(color: Color.accent.opacity(0.3), radius: 10, x: 0, y: 5)
                             }
+                            .buttonStyle(PrimaryButtonStyle())
                             .disabled(isJoining || !authService.canProceed)
                             .opacity((isJoining || !authService.canProceed) ? 0.6 : 1.0)
                             .scaleEffect((isJoining || !authService.canProceed) ? 0.98 : 1.0)
@@ -233,7 +223,7 @@ struct JoinGroupView: View {
                 .foregroundColor(.secondary)
                 .padding(.bottom, 32)
             }
-            .background(Color.background.ignoresSafeArea())
+            .background(AppBackground())
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("Join Group")
             .alert("Error", isPresented: $showError) {

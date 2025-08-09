@@ -152,8 +152,17 @@ struct GeofenceView: View {
                 let isCurrentGeofence = annotation.identifier == geofenceManager.currentUserGeofence
                 
                 MapCircle(center: annotation.coordinate, radius: annotation.radius)
-                    .foregroundStyle(isCurrentGeofence ? Color.accent.opacity(0.4) : Color.gray.opacity(0.15))
-                    .stroke(isCurrentGeofence ? Color.accent : Color.gray, lineWidth: isCurrentGeofence ? 3 : 1)
+                    .foregroundStyle(
+                        isCurrentGeofence
+                        ? AnyShapeStyle(LinearGradient(colors: [Color.accent.opacity(0.35), Color.accentLight.opacity(0.25)], startPoint: .top, endPoint: .bottom))
+                        : AnyShapeStyle(LinearGradient(colors: [Color.gray.opacity(0.12), Color.gray.opacity(0.08)], startPoint: .top, endPoint: .bottom))
+                    )
+                    .stroke(
+                        isCurrentGeofence
+                        ? AnyShapeStyle(LinearGradient(colors: [Color.accent, Color.accentLight], startPoint: .leading, endPoint: .trailing))
+                        : AnyShapeStyle(Color.gray),
+                        lineWidth: isCurrentGeofence ? 3 : 1
+                    )
                 
                 Annotation(annotation.identifier, coordinate: annotation.coordinate) {
                     GeofenceAnnotationView(
@@ -267,42 +276,41 @@ struct GeofenceAnnotationView: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 if isCurrentGeofence {
-                    Image(systemName: "location.fill.viewfinder")
-                        .font(.title)
-                        .foregroundColor(.accent)
-                        .background(
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 40, height: 40)
-                                .shadow(color: Color.accent.opacity(0.4), radius: 8, x: 0, y: 4)
-                        )
+                    ZStack {
+                        Circle()
+                            .fill(AppGradients.primary)
+                            .frame(width: 44, height: 44)
+                            .shadow(color: Color.accent.opacity(0.5), radius: 10, x: 0, y: 6)
+                        Image(systemName: "location.fill.viewfinder")
+                            .foregroundColor(.white)
+                            .font(.title3)
+                    }
                 } else {
-                    Image(systemName: "location.circle")
-                        .font(.callout)
-                        .foregroundColor(.gray)
-                        .background(
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 24, height: 24)
-                                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        )
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.9))
+                            .frame(width: 26, height: 26)
+                            .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 1)
+                        Image(systemName: "location.circle")
+                            .foregroundColor(.gray)
+                            .font(.subheadline)
+                    }
                 }
                 
                 Text(annotation.identifier)
                     .font(isCurrentGeofence ? .caption : .caption2)
-                    .fontWeight(isCurrentGeofence ? .bold : .medium)
-                    .foregroundColor(isCurrentGeofence ? .accent : .gray)
-                    .padding(.horizontal, isCurrentGeofence ? 12 : 6)
-                    .padding(.vertical, isCurrentGeofence ? 6 : 3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(isCurrentGeofence ? .white : .white.opacity(0.9))
+                    .padding(.horizontal, isCurrentGeofence ? 12 : 8)
+                    .padding(.vertical, isCurrentGeofence ? 6 : 4)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
-                            .shadow(
-                                color: isCurrentGeofence ? Color.accent.opacity(0.3) : .black.opacity(0.1), 
-                                radius: isCurrentGeofence ? 6 : 2, 
-                                x: 0, 
-                                y: isCurrentGeofence ? 3 : 1
+                            .fill(
+                                isCurrentGeofence
+                                ? AnyShapeStyle(AppGradients.primary)
+                                : AnyShapeStyle(Color.black.opacity(0.4))
                             )
+                            .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
                     )
             }
         }
@@ -357,7 +365,7 @@ struct LocationPermissionView: View {
             Spacer()
         }
         .padding()
-        .background(Color.background.ignoresSafeArea())
+        .background(AppBackground())
     }
 }
 
@@ -385,7 +393,7 @@ struct LocationDeniedView: View {
             Spacer()
         }
         .padding()
-        .background(Color.background.ignoresSafeArea())
+        .background(AppBackground())
     }
 }
 
