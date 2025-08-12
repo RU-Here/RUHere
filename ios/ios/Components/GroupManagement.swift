@@ -9,45 +9,37 @@ struct ModernGroupsSection: View {
     let errorMessage: String?
     
     var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Your Groups")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                Spacer()
-            }
-            .padding(.horizontal, 20)
+        VStack(spacing: 8) {
             
             if isLoading {
                 HStack {
                     ProgressView()
-                        .scaleEffect(1.2)
+                        .scaleEffect(1.0)
                     Text("Loading groups...")
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                .frame(height: 120)
-                .padding(.horizontal, 20)
+                .frame(height: 80)
+                .padding(.horizontal, 16)
             } else if let errorMessage = errorMessage {
                 VStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.title2)
+                        .font(.headline)
                         .foregroundColor(.orange)
                     Text("Error loading groups")
-                        .font(.headline)
+                        .font(.subheadline)
                     Text(errorMessage)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                .frame(height: 120)
-                .padding(.horizontal, 20)
+                .frame(height: 80)
+                .padding(.horizontal, 16)
             } else if groups.isEmpty {
                 // Empty state when user has no groups
                 VStack(spacing: 16) {
                     Image(systemName: "person.2.circle")
-                        .font(.system(size: 48))
+                        .font(.system(size: 40))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [Color.accent, Color.accentLight],
@@ -58,15 +50,15 @@ struct ModernGroupsSection: View {
                     
                     VStack(spacing: 8) {
                         Text("No Groups Yet")
-                            .font(.headline)
+                            .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
                         
                         Text("Create your first group to start connecting with friends")
-                            .font(.subheadline)
+                            .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 16)
                     }
                     
                     Button(action: {
@@ -76,11 +68,11 @@ struct ModernGroupsSection: View {
                             Image(systemName: "plus.circle.fill")
                             Text("Create Your First Group")
                         }
-                        .font(.headline)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
                         .background(
                             LinearGradient(
                                 colors: [Color.accent, Color.accentLight],
@@ -88,15 +80,15 @@ struct ModernGroupsSection: View {
                                 endPoint: .trailing
                             )
                         )
-                        .cornerRadius(25)
-                        .shadow(color: Color.accent.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .cornerRadius(18)
+                        .shadow(color: Color.accent.opacity(0.2), radius: 6, x: 0, y: 3)
                     }
                 }
-                .frame(height: 180)
-                .padding(.horizontal, 20)
+                .frame(height: 140)
+                .padding(.horizontal, 16)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
+                    HStack(spacing: 12) {
                         ForEach(groups) { group in
                             ModernGroupCard(
                                 group: group,
@@ -107,31 +99,28 @@ struct ModernGroupsSection: View {
                                     selectedGroup = selectedGroup?.id == group.id ? nil : group
                                 }
                             }
-                            .padding(.vertical, 10) // Extra space for scaling and shadow
+                            .padding(.vertical, 6)
                         }
                         
                         // Add New Group Button
                         ModernAddGroupCard {
                             showingCreateGroup = true
                         }
-                        .padding(.vertical, 10) // Consistent spacing
+                        .padding(.vertical, 6)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 5) // Additional space for shadows
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
                 }
             }
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 8)
         .background(
-                LinearGradient(
-                    colors: [Color.cardBackground.opacity(0.95), Color.cardBackground.opacity(0.75)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Color.accent.opacity(0.25), radius: 14, x: 0, y: 8)
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(.systemBackground).opacity(0.7))
+                .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
         )
-        .padding(.horizontal, 16)
-        .padding(.bottom, 34) // Safe area bottom padding
+        .padding(.horizontal, 12)
+        .padding(.bottom, 28)
     }
 }
 
@@ -148,42 +137,38 @@ struct ModernGroupCard: View {
             
             action()
         }) {
-            VStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Text(group.emoji)
-                    .font(.system(size: 32))
+                    .font(.system(size: 20))
                 
-                VStack(spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(group.name)
-                        .font(.headline)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(isSelected ? .white : .primary)
-                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: true, vertical: false)
                     
                     if let currentGeofence = currentGeofence {
                         let peopleInCurrentGeofence = group.people.filter { $0.areaCode == currentGeofence }.count
                         Text("\(peopleInCurrentGeofence) here")
-                            .font(.caption)
+                            .font(.caption2)
                             .fontWeight(.medium)
-                            .foregroundColor(isSelected ? .white.opacity(0.8) : .accent)
-                    } else {
-                        Text("Enter a location")
-                            .font(.caption)
-                            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                            .foregroundColor(isSelected ? .white.opacity(0.85) : .accent)
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
-            .frame(width: 140, height: 120)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(height: 56)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(isSelected ? .thinMaterial : .ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.systemBackground).opacity(0.7))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(
                                 LinearGradient(
-                                    colors: isSelected 
-                                    ? [Color.accent.opacity(0.8), Color.accentLight.opacity(0.6)]
+                                    colors: isSelected
+                                    ? [Color.accent.opacity(0.85), Color.accentLight.opacity(0.7)]
                                     : [Color.clear, Color.clear],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -191,13 +176,13 @@ struct ModernGroupCard: View {
                             )
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(isSelected ? Color.accent : Color.clear, lineWidth: isSelected ? 2 : 0)
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? Color.accent : Color.clear, lineWidth: isSelected ? 1 : 0)
                     )
-                    .shadow(color: isSelected ? Color.accent.opacity(0.4) : .black.opacity(0.08), radius: isSelected ? 15 : 8, x: 0, y: isSelected ? 8 : 4)
+                    .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
             )
         }
-        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .scaleEffect(isSelected ? 1.02 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
         .allowsHitTesting(true)
     }
@@ -213,23 +198,24 @@ struct ModernAddGroupCard: View {
             
             action()
         }) {
-            VStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 40))
+                    .font(.system(size: 20))
                     .foregroundColor(.accent)
                 
                 Text("New Group")
-                    .font(.headline)
+                    .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
+                    .lineLimit(1)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
-            .frame(width: 140, height: 120)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(height: 56)
             .background(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
             )
         }
     }
