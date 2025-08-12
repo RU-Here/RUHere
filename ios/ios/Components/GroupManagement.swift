@@ -137,9 +137,9 @@ struct ModernGroupCard: View {
             
             action()
         }) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Text(group.emoji)
-                    .font(.system(size: 20))
+                    .font(.system(size: 24))
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(group.name)
@@ -157,9 +157,9 @@ struct ModernGroupCard: View {
                     }
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(height: 56)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(height: 60)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(.systemBackground).opacity(0.7))
@@ -198,9 +198,9 @@ struct ModernAddGroupCard: View {
             
             action()
         }) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 24))
                     .foregroundColor(.accent)
                 
                 Text("New Group")
@@ -209,9 +209,9 @@ struct ModernAddGroupCard: View {
                     .foregroundColor(.primary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(height: 56)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(height: 60)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
