@@ -23,7 +23,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        "https://ru-here.vercel.app/api/public/joinWaitlist",
+        "https://ru-here-api.vercel.app/api/public/joinWaitlist",
         {
           method: "POST",
           headers: {

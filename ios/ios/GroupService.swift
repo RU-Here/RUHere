@@ -6,7 +6,7 @@ class GroupService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private let baseURL = "https://ru-here.vercel.app/api/geofence"
+    private let baseURL = "https://ru-here-api.vercel.app/api/geofence"
     private let authService: AuthenticationService
     
     init(authService: AuthenticationService) {

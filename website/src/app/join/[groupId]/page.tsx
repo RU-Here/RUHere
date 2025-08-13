@@ -25,7 +25,7 @@ export default function JoinGroupPage() {
     const fetchGroupInfo = async () => {
       try {
         const response = await fetch(
-          `https://ru-here.vercel.app/api/public/getGroup`,
+          `https://ru-here-api.vercel.app/api/public/getGroup`,
           {
             method: "POST",
             headers: {
