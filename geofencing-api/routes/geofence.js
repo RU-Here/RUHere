@@ -291,18 +291,22 @@ async function getAllGroupsByUser(userId, db) {
   const groupData = [];
 
   for (const doc of groups.docs) {
-    const groupObjects = doc.data();
-    const personRefs = groupObjects.people || [];
-
-    const peopleData = await Promise.all(
-      personRefs.map(async (ref) => {
-        const personObject = await ref.get();
-        return { id: personObject.id, ...personObject.data() }
-      })
-    );
-
-    groupData.push({ id: doc.id, ...doc.data(), people: peopleData });
+    groupData.push({ id: doc.id });
   }
+
+  // for (const doc of groups.docs) {
+  //   const groupObjects = doc.data();
+  //   const personRefs = groupObjects.people || [];
+
+  //   const peopleData = await Promise.all(
+  //     personRefs.map(async (ref) => {
+  //       const personObject = await ref.get();
+  //       return { id: personObject.id, ...personObject.data() }
+  //     })
+  //   );
+
+  //   groupData.push({ id: doc.id, ...doc.data(), people: peopleData });
+  // }
 
   return groupData;
 }
