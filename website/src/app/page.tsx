@@ -51,8 +51,8 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-zinc-900 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <div className="mx-auto max-w-6xl py-16 lg:px-8 lg:py-24">
+        <div className="flex flex-col items-center gap-12 my-16  lg:grid-cols-2">
           <div>
             <div className="mb-8 inline-flex items-center gap-3 rounded-full border border-zinc-700 bg-zinc-800 px-4 py-2 shadow-sm backdrop-blur">
               <img
@@ -64,7 +64,7 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              No more missed connections
+              No more <br /> missed connections
             </h1>
 
             <p className="mt-6 max-w-xl text-lg text-zinc-300">
@@ -102,7 +102,7 @@ export default function Home() {
                 {message}
               </p>
             )}
-            <div className="mt-4 text-sm text-zinc-400 w-fit">
+            <div className="mt-4 text-sm text-zinc-400 w-fit flex flex-col gap-2">
               <a
                 href="https://www.instagram.com/ruhere.app/"
                 className="flex items-center gap-2 hover:text-zinc-200 hover:underline transition-colors"
