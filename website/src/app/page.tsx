@@ -23,7 +23,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        "https://ru-here.vercel.app/api/geofence/joinWaitlist",
+        "https://ru-here.vercel.app/api/public/joinWaitlist",
         {
           method: "POST",
           headers: {
@@ -37,6 +37,8 @@ export default function Home() {
       if (response.ok) {
         setMessage("Thanks for joining our waitlist! We'll be in touch soon.");
         setEmail("");
+      } else if (response.status === 409) {
+        setMessage("You're already on the waitlist!");
       } else {
         setMessage("Something went wrong. Please try again.");
       }
@@ -123,13 +125,6 @@ export default function Home() {
                 </svg>
               </a>
             </div>
-          </div>
-          <div className="relative hidden lg:block">
-            <img
-              src="/notification.svg"
-              alt="Notification illustration"
-              className="w-full h-auto"
-            />
           </div>
         </div>
       </div>
