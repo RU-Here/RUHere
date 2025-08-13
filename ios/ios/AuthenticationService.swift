@@ -11,7 +11,7 @@ class AuthenticationService: ObservableObject {
     @Published var isGuestMode = false
     
     // MARK: - API Configuration
-    private let baseURL = "https://ru-here-api-api.vercel.app/api/geofence"
+    private let baseURL = "https://ru-here-api.vercel.app/api/geofence"
     
     init() {
         user = Auth.auth().currentUser
