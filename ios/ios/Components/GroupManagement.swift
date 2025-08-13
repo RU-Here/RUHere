@@ -112,32 +112,11 @@ struct ModernGroupsSection: View {
                         .padding(.horizontal, 8)
                     }
 
-                    HStack(spacing: 10) {
-                        Button {
-                            withAnimation { isShowingPicker = true }
-                        } label: {
-                            Label("Choose Group", systemImage: "chevron.up")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(.ultraThinMaterial)
-                                .cornerRadius(12)
-                        }
-
-                        Button {
-                            showingCreateGroup = true
-                        } label: {
-                            Label("New", systemImage: "plus.circle.fill")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(.ultraThinMaterial)
-                                .cornerRadius(12)
-                        }
+                    // Optional: quick access to create a new group
+                    ModernAddGroupCard {
+                        showingCreateGroup = true
                     }
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 8)
                 }
                 .contentShape(Rectangle())
                 .gesture(
@@ -166,6 +145,118 @@ struct ModernGroupsSection: View {
         )
         .padding(.horizontal, 12)
         .padding(.bottom, 28)
+    }
+}
+
+// Compact placeholder when no group is selected yet
+private struct AllGroupsCard: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.3.sequence.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("All Groups")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    Text("Tap or swipe up to choose a group")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.up")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(height: 60)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+            )
+        }
+    }
+}
+
+// MARK: - Group Picker Sheet
+private struct GroupPickerView: View {
+    let groups: [UserGroup]
+    @Binding var selectedGroup: UserGroup?
+    @Binding var showingCreateGroup: Bool
+    let currentGeofence: String?
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            List {
+                Section {
+                    ForEach(groups) { group in
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                selectedGroup = group
+                                dismiss()
+                            }
+                        } label: {
+                            GroupListRow(
+                                group: group,
+                                isSelected: selectedGroup?.id == group.id,
+                                currentGeofence: currentGeofence
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Choose Group")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("New") { showingCreateGroup = true; dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct GroupListRow: View {
+    let group: UserGroup
+    let isSelected: Bool
+    let currentGeofence: String?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(group.emoji).font(.title2)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(group.name)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.accent)
+                            .font(.caption)
+                    }
+                }
+                if let currentGeofence = currentGeofence {
+                    let count = group.people.filter { $0.areaCode == currentGeofence }.count
+                    Text("\(count) here")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
     }
 }
 
@@ -263,89 +354,6 @@ struct ModernAddGroupCard: View {
                     .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
             )
         }
-    }
-}
-
-// Compact placeholder when no group is selected yet
-private struct AllGroupsCard: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: "person.3.sequence.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(.accent)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("All Groups")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                    Text("Tap to choose a group")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.up")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(height: 60)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
-            )
-        }
-    }
-}
-
-// MARK: - Group Picker Sheet
-struct GroupPickerView: View {
-    let groups: [UserGroup]
-    @Binding var selectedGroup: UserGroup?
-    @Binding var showingCreateGroup: Bool
-    let currentGeofence: String?
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(groups) { group in
-                        ModernGroupCard(
-                            group: group,
-                            isSelected: selectedGroup?.id == group.id,
-                            currentGeofence: currentGeofence
-                        ) {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                                selectedGroup = group
-                                dismiss()
-                            }
-                        }
-                    }
-
-                    ModernAddGroupCard {
-                        showingCreateGroup = true
-                        dismiss()
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .background(Color.background.ignoresSafeArea())
-            .navigationTitle("Choose Group")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 }
 
