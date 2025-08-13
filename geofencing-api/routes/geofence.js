@@ -219,10 +219,10 @@ router.post('/enter', async (req, res) => {
     const groupsOfUser = await getAllGroupsByUser(userId, db);
     // 2. Get all friends in those groups
 
-    // for (const doc in groupsOfUser) {
-    //   const peopleData = await getAllPeopleinGroup(doc, db);
+    for (const doc in groupsOfUser) {
+      const peopleData = await getAllPeopleinGroup(doc, db);
 
-    // }
+    }
 
     // 3. Filter to get all friends where userId location == friend location
     const allFriends = groupsOfUser.flatMap(group =>
@@ -392,8 +392,24 @@ router.get('/group/:groupId', async (req, res) => {
   }
 });
 
+// Get all people by a group
+router.get('/getPeople/:groupId', async (req, res) => {
+  const groupId = req.params.groupId
+  
+  try {
+    const peopleData = await getAllPeopleinGroup(groupId, db)
+    res.status(200).send(peopleData)
+  } catch (error) {
+    res.status(500).send({error: error.message});
+  }
+});
+
 async function getAllPeopleinGroup(groupId, db) {
-  const groupRef = db.collection('Groups').doc(groupId);
+  const groupRef = await db.collection('Groups').doc(groupId).get();
+
+  if (!groupRef.exists) {
+      return res.status(404).send({ error: 'Group not found' });
+  }
 
   const personRefs = groupRef.data().people || [];
   
