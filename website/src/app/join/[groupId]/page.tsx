@@ -41,7 +41,7 @@ export default function JoinGroupPage() {
         } else {
           setError("Group not found or invalid");
         }
-      } catch (err) {
+      } catch {
         setError("Failed to load group information");
       } finally {
         setIsLoading(false);
@@ -83,7 +83,7 @@ export default function JoinGroupPage() {
       // For iOS, try direct navigation first
       try {
         window.location.href = customSchemeUrl;
-      } catch (e) {
+      } catch {
         console.log("Direct navigation failed, trying iframe method");
         // Fallback to iframe method
         const iframe = document.createElement("iframe");
@@ -101,7 +101,7 @@ export default function JoinGroupPage() {
       const intentUrl = `intent://join/${groupId}#Intent;scheme=ruhere;package=com.example.testapp;end`;
       try {
         window.location.href = intentUrl;
-      } catch (e) {
+      } catch {
         window.location.href = customSchemeUrl;
       }
     } else {
@@ -160,8 +160,8 @@ export default function JoinGroupPage() {
               Group Not Found
             </h1>
             <p className="text-gray-300 mb-6">
-              The group you're trying to join either doesn't exist or the link
-              is invalid.
+              The group you&apos;re trying to join either doesn&apos;t exist or
+              the link is invalid.
             </p>
             <button
               onClick={() => router.push("/")}
@@ -184,7 +184,7 @@ export default function JoinGroupPage() {
             Join {groupInfo.name}
           </h1>
           <p className="text-gray-300 mb-6">
-            You've been invited to join this group! Open the RUHere app to
+            You&apos;ve been invited to join this group! Open the RUHere app to
             continue.
           </p>
 
