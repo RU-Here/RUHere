@@ -197,11 +197,16 @@ private struct GroupPickerView: View {
             List {
                 Section {
                     ForEach(groups) { group in
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                selectedGroup = group
-                                dismiss()
-                            }
+                        NavigationLink {
+                            GroupDetailView(
+                                group: group,
+                                onSelect: { g in
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                        selectedGroup = g
+                                        dismiss()
+                                    }
+                                }
+                            )
                         } label: {
                             GroupListRow(
                                 group: group,
@@ -810,5 +815,183 @@ private struct RemovedBanner: View {
                 .fill(.ultraThinMaterial)
                 .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
         )
+    }
+}
+
+// MARK: - Group Detail View (Read-only for non-admins)
+struct GroupDetailView: View {
+    let group: UserGroup
+    let onSelect: (UserGroup) -> Void
+
+    @EnvironmentObject var groupService: GroupService
+    @EnvironmentObject var authService: AuthenticationService
+    @State private var members: [Person] = []
+    @State private var removingIds: Set<String> = []
+    @State private var errorMessage: String?
+
+    private var latestGroup: UserGroup {
+        groupService.groups.first(where: { $0.id == group.id }) ?? group
+    }
+
+    private var isCurrentUserAdmin: Bool {
+        let currentUserId = authService.user?.uid ?? (authService.isGuestMode ? "guest_user" : "")
+        return latestGroup.admin == currentUserId
+    }
+    
+    private var adminDisplayName: String {
+        if let adminPerson = latestGroup.people.first(where: { $0.id == latestGroup.admin }) {
+            return adminPerson.name
+        }
+        return latestGroup.admin
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                headerSection
+                detailsSection
+                membersSection
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .font(.callout)
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 24)
+                }
+                actionsSection
+            }
+            .padding(.top, 20)
+        }
+        .background(Color.background.ignoresSafeArea())
+        .navigationTitle("Group Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            members = latestGroup.people
+        }
+        .onReceive(groupService.$groups) { groups in
+            guard let updated = groups.first(where: { $0.id == group.id }) else { return }
+            if updated.people.map({ $0.id }) != members.map({ $0.id }) {
+                withAnimation { members = updated.people }
+            }
+        }
+    }
+
+    @ViewBuilder private var headerSection: some View {
+        ModernCardView {
+            HStack(spacing: 16) {
+                Text(latestGroup.emoji)
+                    .font(.system(size: 40))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(latestGroup.name)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text(isCurrentUserAdmin ? "You are the admin" : "Member")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+            .padding(16)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder private var detailsSection: some View {
+        ModernCardView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill").foregroundColor(.accent)
+                    Text("Details").font(.headline).fontWeight(.semibold)
+                }
+                DetailRow(title: "Members", value: "\(members.count)")
+                DetailRow(title: "Admin", value: adminDisplayName)
+            }
+            .padding(16)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder private var membersSection: some View {
+        ModernCardView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.2.fill").foregroundColor(.accent)
+                    Text("Members (\(members.count))").font(.headline).fontWeight(.semibold)
+                }
+                ForEach(members, id: \.id) { person in
+                    VStack {
+                        HStack {
+                            Text(person.name)
+                                .fontWeight(.medium)
+                            Spacer()
+                            if person.id == latestGroup.admin {
+                                Text("Admin")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else if isCurrentUserAdmin {
+                                if removingIds.contains(person.id) {
+                                    ProgressView().scaleEffect(0.9)
+                                } else {
+                                    Button {
+                                        Task { await remove(person: person) }
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill").foregroundColor(.red)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.vertical, 8)
+                        Divider().background(.quaternary)
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder private var actionsSection: some View {
+        VStack(spacing: 12) {
+            Button {
+                onSelect(latestGroup)
+            } label: {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Select This Group")
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(
+                    LinearGradient(colors: [Color.accent, Color.accentLight], startPoint: .leading, endPoint: .trailing)
+                )
+                .cornerRadius(25)
+            }
+
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
+    }
+
+    // MARK: - Admin helpers
+    private func requesterId() -> String? {
+        if let user = authService.user { return user.uid }
+        if authService.isGuestMode { return "guest_user" }
+        return nil
+    }
+
+    private func remove(person: Person) async {
+        guard isCurrentUserAdmin, let requesterId = requesterId() else { return }
+        await MainActor.run { removingIds.insert(person.id) }
+        let success = await groupService.removeUserFromGroup(groupId: latestGroup.id, userId: person.id, requesterId: requesterId)
+        await MainActor.run {
+            removingIds.remove(person.id)
+            if success {
+                withAnimation { members.removeAll { $0.id == person.id } }
+                errorMessage = nil
+            } else {
+                errorMessage = groupService.errorMessage
+            }
+        }
     }
 }
