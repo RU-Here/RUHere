@@ -20,6 +20,9 @@ const spartan = League_Spartan({
 export const metadata: Metadata = {
   title: "RuHere - no more missed connections",
   description: "Join the waitlist for RuHere",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
