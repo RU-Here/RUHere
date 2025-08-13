@@ -218,6 +218,12 @@ router.post('/enter', async (req, res) => {
     // 1. Get all groups the userId is part of
     const groupsOfUser = await getAllGroupsByUser(userId, db);
     // 2. Get all friends in those groups
+
+    // for (const doc in groupsOfUser) {
+    //   const peopleData = await getAllPeopleinGroup(doc, db);
+
+    // }
+
     // 3. Filter to get all friends where userId location == friend location
     const allFriends = groupsOfUser.flatMap(group =>
       group.people.filter(friend => friend.areaCode === areaCode && friend.id != userId)
@@ -286,13 +292,14 @@ async function getAllGroupsByUser(userId, db) {
 
   const groups = await db.collection('Groups')
     .where('people', 'array-contains', userRef)
+    .select("name", "emoji", "admin")
     .get();
   
   const groupData = [];
 
-  for (const doc of groups.docs) {
-    groupData.push({ id: doc.id });
-  }
+  groups.forEach(doc => {
+    groupData.push({ id: doc.id, ...doc.data() });
+  });
 
   // for (const doc of groups.docs) {
   //   const groupObjects = doc.data();
@@ -385,7 +392,20 @@ router.get('/group/:groupId', async (req, res) => {
   }
 });
 
+async function getAllPeopleinGroup(groupId, db) {
+  const groupRef = db.collection('Groups').doc(groupId);
 
+  const personRefs = groupRef.data().people || [];
+  
+  const peopleData = await Promise.all(
+      personRefs.map(async (ref) => {
+        const personObject = await ref.get();
+        return { id: personObject.id, ...personObject.data() }
+      })
+    );
+  
+  return peopleData;
+}
 
 
 
