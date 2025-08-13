@@ -59,6 +59,42 @@ struct GeofenceView: View {
                             )
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        if geofenceManager.isGhostModeEnabled {
+                            geofenceManager.disableGhostMode()
+                            // If not immediately in a geofence after re-enabling, keep the all-geofences view
+                            if geofenceManager.currentUserGeofence == nil {
+                                withAnimation(.easeInOut(duration: 1.0)) {
+                                    cameraPosition = .region(
+                                        MapUtilities.calculateAllGeofencesRegion(from: geofenceManager.monitoredRegions)
+                                    )
+                                }
+                            }
+                        } else {
+                            geofenceManager.enableGhostMode()
+                            withAnimation(.easeInOut(duration: 1.0)) {
+                                cameraPosition = .region(
+                                    MapUtilities.calculateAllGeofencesRegion(from: geofenceManager.monitoredRegions)
+                                )
+                            }
+                        }
+                    }) {
+                        Text("👻")
+                            .font(.title2)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(geofenceManager.isGhostModeEnabled ? Color.gray.opacity(0.2) : Color.accent.opacity(0.15))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(geofenceManager.isGhostModeEnabled ? Color.gray : Color.accent, lineWidth: 1)
+                            )
+                            .cornerRadius(18)
+                            .accessibilityLabel(geofenceManager.isGhostModeEnabled ? "Disable Ghost Mode" : "Enable Ghost Mode")
+                    }
+                }
             }
             .sheet(isPresented: $showingRegionDetail) {
                 if let region = selectedRegion {
@@ -216,6 +252,7 @@ struct GeofenceView: View {
     }
     
     private func handleRegionsChange() {
+        if geofenceManager.isGhostModeEnabled { return }
         cameraPosition = .region(MapUtilities.calculateAllGeofencesRegion(from: geofenceManager.monitoredRegions))
         hasPerformedInitialZoom = false
         
@@ -229,6 +266,7 @@ struct GeofenceView: View {
     }
     
     private func handleUserGeofenceChange() {
+        if geofenceManager.isGhostModeEnabled { return }
         if geofenceManager.currentUserGeofence != nil {
             // User entered a geofence - animate to it
             animateToCurrentGeofenceIfNeeded()
