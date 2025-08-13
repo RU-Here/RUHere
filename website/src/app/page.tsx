@@ -76,7 +76,7 @@ export default function Home() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Enter your Rutgers email"
                   required
                   className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-4 py-3 text-white placeholder-zinc-400 shadow-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
                 />
