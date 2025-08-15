@@ -6,6 +6,7 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var monitoredRegions: [CLCircularRegion] = []
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published var currentUserGeofence: String? = nil // Track which geofence the user is currently in
+    @Published var isGhostModeEnabled: Bool = false
     
     override init() {
         super.init()
@@ -55,6 +56,10 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func loadGeofences() {
+        guard !isGhostModeEnabled else {
+            print("Ghost Mode is enabled — skipping geofence load")
+            return
+        }
         guard let url = Bundle.main.url(forResource: "Locations", withExtension: "json") else {
             print("Could not find Locations.json in app bundle")
             return
@@ -148,12 +153,14 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        guard !isGhostModeEnabled else { return }
         print("Entered region: \(region.identifier)")
         currentUserGeofence = region.identifier
         sendNotification(title: "Entered Region", body: "You have entered \(region.identifier)", category: "GEOFENCE_ENTER")
     }
     
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        guard !isGhostModeEnabled else { return }
         print("Exited region: \(region.identifier)")
         // Only clear current geofence if we're exiting the one we're currently in
         if currentUserGeofence == region.identifier {
@@ -163,6 +170,7 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard !isGhostModeEnabled else { return }
         guard let currentLocation = locations.last else { return }
         
         // Check which geofence contains the current location
@@ -203,3 +211,33 @@ class GeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 } 
+
+// MARK: - Ghost Mode Controls
+extension GeofenceManager {
+    func enableGhostMode() {
+        guard !isGhostModeEnabled else { return }
+        isGhostModeEnabled = true
+        print("👻 Enabling Ghost Mode: stopping monitoring and clearing state")
+        
+        // Stop monitoring all regions
+        for region in monitoredRegions {
+            locationManager.stopMonitoring(for: region)
+        }
+        
+        // Clear current geofence and stop location updates
+        currentUserGeofence = nil
+        locationManager.stopUpdatingLocation()
+    }
+    
+    func disableGhostMode() {
+        guard isGhostModeEnabled else { return }
+        isGhostModeEnabled = false
+        print("🛰️ Disabling Ghost Mode: resuming monitoring and location updates")
+        
+        // Resume location updates and reload geofences if authorized
+        locationManager.startUpdatingLocation()
+        if authorizationStatus == .authorizedAlways {
+            loadGeofences()
+        }
+    }
+}
